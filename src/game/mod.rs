@@ -83,7 +83,7 @@ impl MineSweeper {
 
     fn populate_board(&mut self) {
         for index in &self.mines_index {
-            let i = *index as u32 / self.rows;
+            let i = *index as u32 / self.cols;
             let j = *index as u32 % self.cols;
             self.map.insert(
                 Position(i, j),
@@ -202,34 +202,42 @@ impl MineSweeper {
             .any(|x| x.is_mine && x.state == SquareState::Revealed)
     }
 
-    pub fn toggle_flag_square(&mut self, row: u32, col: u32) {
-        assert!(row < self.rows);
-        assert!(col < self.cols);
+    pub fn toggle_flag_square(&mut self, curr_pos: &Position) {
+        assert!(curr_pos.0 < self.rows);
+        assert!(curr_pos.1 < self.cols);
 
-        if self.map[&Position(row, col)].state == SquareState::Flagged {
-            self.map.get_mut(&Position(row, col)).unwrap().state = SquareState::Covered;
+        if self.map[curr_pos].state == SquareState::Flagged {
+            self.map.get_mut(curr_pos).unwrap().state = SquareState::Covered;
             self.num_flagged -= 1;
         } else {
-            self.map.get_mut(&Position(row, col)).unwrap().state = SquareState::Flagged;
+            self.map.get_mut(curr_pos).unwrap().state = SquareState::Flagged;
             self.num_flagged += 1;
         }
     }
 
-    fn find_reveals(&self, row: u32, col: u32) -> HashSet<Position> {
+    fn find_reveals(&self, curr_pos: &Position) -> HashSet<Position> {
+        let curr_square = &self.map[curr_pos];
+        if curr_square.is_mine || curr_square.adjacent_mines > 0 {
+            return hashset!{curr_pos.clone()};
+        }
+
         let mut all_reveal: HashSet<Position> = HashSet::new();
         let mut candidates: VecDeque<Position> = VecDeque::new();
-        candidates.push_back(Position(row, col));
+        candidates.push_back(curr_pos.clone());
         let mut visited: HashSet<Position> = HashSet::new();
 
         while !candidates.is_empty() {
             let pos = candidates.pop_front().unwrap();
             if !visited.contains(&pos) {
                 visited.insert(pos);
-                all_reveal.insert(pos);
 
-                let curr_square = &self.map[&Position(row, col)];
+                let square = &self.map[&pos];
 
-                if !curr_square.is_mine && curr_square.adjacent_mines == 0 {
+                if !square.is_mine {
+                    all_reveal.insert(pos.clone());
+                }
+
+                if !square.is_mine && square.adjacent_mines == 0 {
                     for p in MineSweeper::get_neighbor_coords(&pos, self.cols, self.rows) {
                         candidates.push_back(p);
                     }
@@ -240,12 +248,12 @@ impl MineSweeper {
         all_reveal
     }
 
-    pub fn reveal_square(&mut self, row: u32, col: u32) {
-        assert!(row < self.rows);
-        assert!(col < self.cols);
+    pub fn reveal_square(&mut self, curr_pos: &Position) {
+        assert!(curr_pos.0 < self.rows);
+        assert!(curr_pos.1 < self.cols);
 
-        if self.map[&Position(row, col)].state == SquareState::Covered {
-            let all_reveal = self.find_reveals(row, col);
+        if self.map[curr_pos].state == SquareState::Covered {
+            let all_reveal = self.find_reveals(curr_pos);
 
             for pos in &all_reveal {
                 self.map.get_mut(pos).unwrap().state = SquareState::Revealed;

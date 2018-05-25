@@ -5,7 +5,7 @@ authors = ["Eric Fang <eric1221bday@gmail.com>"]
 
 [dependencies]
 piston_window = "*"
-#find_folder = "*"
+find_folder = "*"
 rand = "*"
 prettytable-rs = "*"
 maplit = "*"

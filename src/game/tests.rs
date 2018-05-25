@@ -36,7 +36,7 @@ fn test_update_game_state() {
         assert!(!game.check_game_won());
         let i = *index as u32 / game.rows;
         let j = *index as u32 % game.cols;
-        game.toggle_flag_square(i, j);
+        game.toggle_flag_square(&Position(i, j));
     }
 
     game.update_game_state();
@@ -50,7 +50,10 @@ fn test_update_game_state() {
     let mine_index = game.mines_index[0];
     let rows = game.rows;
     let cols = game.cols;
-    game.reveal_square(mine_index as u32 / rows, mine_index as u32 % cols);
+    game.reveal_square(&Position(
+        mine_index as u32 / rows,
+        mine_index as u32 % cols,
+    ));
 
     game.update_game_state();
 
@@ -169,7 +172,7 @@ fn test_get_neighbors() {
 fn test_adjacent_mines_num() {
     let mut game = MineSweeper {
         cols: 3,
-        rows: 3,
+        rows: 4,
         num_mines: 3,
         num_flagged: 0,
         rng: thread_rng(),
@@ -195,12 +198,12 @@ fn test_toggle_flag() {
     assert_eq!(game.num_flagged, 0);
     assert_eq!(game.map[&Position(3, 4)].state, SquareState::Covered);
     assert_eq!(game.map[&Position(6, 7)].state, SquareState::Covered);
-    game.toggle_flag_square(3, 4);
-    game.toggle_flag_square(6, 7);
+    game.toggle_flag_square(&Position(3, 4));
+    game.toggle_flag_square(&Position(6, 7));
     assert_eq!(game.map[&Position(3, 4)].state, SquareState::Flagged);
     assert_eq!(game.map[&Position(6, 7)].state, SquareState::Flagged);
     assert_eq!(game.num_flagged, 2);
-    game.toggle_flag_square(6, 7);
+    game.toggle_flag_square(&Position(6, 7));
     assert_eq!(game.map[&Position(6, 7)].state, SquareState::Covered);
     assert_eq!(game.num_flagged, 1);
 }
@@ -220,20 +223,25 @@ fn test_reveal_square() {
 
     game.populate_board();
 
-    game.reveal_square(2, 0);
+    game.reveal_square(&Position(2, 0));
 
-    assert_eq!(game.map[&Position(2, 2)].state, SquareState::Revealed);
     assert_eq!(game.map[&Position(1, 0)].state, SquareState::Revealed);
     assert_eq!(game.map[&Position(1, 1)].state, SquareState::Revealed);
     assert_eq!(game.map[&Position(2, 0)].state, SquareState::Revealed);
     assert_eq!(game.map[&Position(2, 1)].state, SquareState::Revealed);
+
+    assert_eq!(game.map[&Position(2, 2)].state, SquareState::Covered);
+    assert_eq!(game.map[&Position(0, 1)].state, SquareState::Covered);
+    assert_eq!(game.map[&Position(0, 0)].state, SquareState::Covered);
+    assert_eq!(game.map[&Position(0, 2)].state, SquareState::Covered);
+    assert_eq!(game.map[&Position(1, 2)].state, SquareState::Covered);
 }
 
 #[test]
 fn test_reset() {
     let mut game = MineSweeper::new(9, 9, 10);
 
-    game.toggle_flag_square(5, 5);
+    game.toggle_flag_square(&Position(5, 5));
 
     game.reset();
 
