@@ -1,10 +1,6 @@
 #[cfg(test)]
 mod tests;
 
-use prettytable::Table;
-use prettytable::cell::Cell;
-use prettytable::row::Row;
-
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::collections::VecDeque;
@@ -155,32 +151,18 @@ impl MineSweeper {
         neighbors
     }
 
-    pub fn show(&self) {
-        let mut table = Table::new();
-
-        for i in 0..self.rows {
-            let mut row: Vec<Cell> = Vec::new();
-            for j in 0..self.cols {
-                let curr_square = &self.map[&Position(i, j)];
-                if curr_square.is_mine {
-                    row.push(Cell::new("M"));
-                } else if curr_square.adjacent_mines > 0 {
-                    row.push(Cell::new(&curr_square.adjacent_mines.to_string()));
-                } else {
-                    row.push(Cell::new(" "));
-                }
-            }
-            table.add_row(Row::new(row));
-        }
-
-        table.printstd();
-    }
-
     pub fn update_game_state(&mut self) {
         if self.check_game_won() {
             self.state = GameState::Won;
+            self.map
+                .iter_mut()
+                .filter(|&(_, ref x)| x.state == SquareState::Covered)
+                .for_each(|(_, ref mut x)| x.state = SquareState::Revealed);
         } else if self.check_game_lost() {
             self.state = GameState::Lost;
+            self.map
+                .iter_mut()
+                .for_each(|(_, ref mut x)| x.state = SquareState::Revealed);
         } else {
             self.state = GameState::Ongoing;
         }
@@ -233,11 +215,13 @@ impl MineSweeper {
 
                 let square = &self.map[&pos];
 
-                if !square.is_mine {
-                    all_reveal.insert(pos.clone());
+                if !square.is_mine && square.state != SquareState::Flagged {
+                    all_reveal.insert(pos);
                 }
 
-                if !square.is_mine && square.adjacent_mines == 0 {
+                if !square.is_mine && square.state != SquareState::Flagged
+                    && square.adjacent_mines == 0
+                {
                     for p in MineSweeper::get_neighbor_coords(&pos, self.cols, self.rows) {
                         candidates.push_back(p);
                     }
@@ -263,5 +247,9 @@ impl MineSweeper {
 
     pub fn get_square(&self, row: u32, col: u32) -> &Square {
         &self.map[&Position(row, col)]
+    }
+
+    pub fn get_flags_left(&self) -> u32 {
+        self.num_mines - self.num_flagged
     }
 }

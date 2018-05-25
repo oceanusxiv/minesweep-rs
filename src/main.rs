@@ -1,5 +1,4 @@
 extern crate piston_window;
-extern crate prettytable;
 extern crate rand;
 #[macro_use]
 extern crate maplit;
@@ -24,20 +23,71 @@ fn main() {
     let assets = find_folder::Search::ParentsThenKids(3, 3)
         .for_folder("assets")
         .unwrap();
-    let ref font = assets.join("FiraSans-Regular.ttf");
-    println!("{:?}", font);
+
+    let font = &assets.join("FiraSans-Regular.ttf");
+    let mine = &assets.join("mine.png");
+    let flag = &assets.join("flag.png");
+    let win_face = &assets.join("cool.png");
+    let ongoing_face = &assets.join("happy.png");
+    let lost_face = &assets.join("shocked.png");
+
     let factory = window.factory.clone();
+
     let mut glyphs = Glyphs::new(
         font,
         factory,
         TextureSettings::new().filter(Filter::Nearest),
     ).unwrap();
 
+    let mine: G2dTexture = Texture::from_path(
+        &mut window.factory,
+        &mine,
+        Flip::None,
+        &TextureSettings::new(),
+    ).unwrap();
+
+    let flag: G2dTexture = Texture::from_path(
+        &mut window.factory,
+        &flag,
+        Flip::None,
+        &TextureSettings::new(),
+    ).unwrap();
+
+    let win_face: G2dTexture = Texture::from_path(
+        &mut window.factory,
+        &win_face,
+        Flip::None,
+        &TextureSettings::new(),
+    ).unwrap();
+
+    let ongoing_face: G2dTexture = Texture::from_path(
+        &mut window.factory,
+        &ongoing_face,
+        Flip::None,
+        &TextureSettings::new(),
+    ).unwrap();
+
+    let lost_face: G2dTexture = Texture::from_path(
+        &mut window.factory,
+        &lost_face,
+        Flip::None,
+        &TextureSettings::new(),
+    ).unwrap();
+
     window.set_lazy(true);
 
     while let Some(e) = window.next() {
         if let Some(_) = e.render_args() {
-            front.draw(&mut window, &e, &mut glyphs);
+            front.draw(
+                &mut window,
+                &e,
+                &mut glyphs,
+                &mine,
+                &flag,
+                &win_face,
+                &ongoing_face,
+                &lost_face,
+            );
         }
 
         if let Some(mouse_e) = e.mouse_cursor_args() {
@@ -47,8 +97,8 @@ fn main() {
         if let Some(button) = e.press_args() {
             match button {
                 Button::Mouse(m) => front.handle_mouse_click(m),
-                Button::Keyboard(k) => println!("{:?}", k),
-                Button::Controller(c) => println!("{:?}", c),
+                Button::Keyboard(k) => front.handle_key_press(k),
+                _ => (),
             }
         }
     }
