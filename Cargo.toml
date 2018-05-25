@@ -1,0 +1,11 @@
+[package]
+name = "minesweep-rs"
+version = "0.1.0"
+authors = ["Eric Fang <eric1221bday@gmail.com>"]
+
+[dependencies]
+piston_window = "*"
+#find_folder = "*"
+rand = "*"
+prettytable-rs = "*"
+maplit = "*"
