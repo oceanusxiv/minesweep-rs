@@ -4,6 +4,7 @@ mod tests;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::collections::VecDeque;
+use std::time::SystemTime;
 
 use rand::ThreadRng;
 use rand::seq::sample_indices;
@@ -42,6 +43,9 @@ pub struct MineSweeper {
     rng: ThreadRng,
     mines_index: Vec<usize>,
     map: HashMap<Position, Square>,
+    first_move: bool,
+    timer: SystemTime,
+    elapsed: u64,
     pub state: GameState,
 }
 
@@ -57,6 +61,9 @@ impl MineSweeper {
             mines_index: sample_indices(&mut rng, (rows * cols) as usize, num_mines as usize),
             rng,
             map: HashMap::new(),
+            first_move: true,
+            timer: SystemTime::now(),
+            elapsed: 0,
             state: GameState::Ongoing,
         };
 
@@ -75,6 +82,25 @@ impl MineSweeper {
         self.map.clear();
         self.populate_board();
         self.state = GameState::Ongoing;
+        self.first_move = true;
+    }
+
+    pub fn first_moved(&mut self) {
+        if self.first_move {
+            self.timer = SystemTime::now();
+            self.first_move = false;
+        }
+    }
+
+    pub fn game_time(&mut self) -> u64 {
+        if self.first_move {
+            0
+        } else if self.state == GameState::Ongoing {
+            self.elapsed = self.timer.elapsed().unwrap().as_secs();
+            self.elapsed
+        } else {
+            self.elapsed
+        }
     }
 
     fn populate_board(&mut self) {

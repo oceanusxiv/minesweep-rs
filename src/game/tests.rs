@@ -178,6 +178,9 @@ fn test_adjacent_mines_num() {
         rng: thread_rng(),
         mines_index: vec![0, 4, 8],
         map: HashMap::new(),
+        first_move: true,
+        timer: SystemTime::now(),
+        elapsed: 0,
         state: GameState::Ongoing,
     };
 
@@ -218,6 +221,9 @@ fn test_reveal_square() {
         rng: thread_rng(),
         mines_index: vec![0, 1, 5],
         map: HashMap::new(),
+        first_move: true,
+        timer: SystemTime::now(),
+        elapsed: 0,
         state: GameState::Ongoing,
     };
 

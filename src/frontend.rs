@@ -47,10 +47,12 @@ impl Gui {
             match button {
                 MouseButton::Left => {
                     self.game.reveal_square(&self.selected_position.unwrap());
+                    self.game.first_moved();
                 }
                 MouseButton::Right => {
                     self.game
                         .toggle_flag_square(&self.selected_position.unwrap());
+                    self.game.first_moved();
                 }
                 _ => (),
             }
@@ -84,7 +86,7 @@ impl Gui {
     }
 
     pub fn draw(
-        &self,
+        &mut self,
         window: &mut PistonWindow,
         event: &Event,
         glyphs: &mut Glyphs,
@@ -98,7 +100,7 @@ impl Gui {
             clear([0.5, 0.5, 0.5, 1.0], g);
 
             rectangle::Rectangle::new([0.3, 0.3, 0.3, 1.0]).draw(
-                [3.0, 3.0, 50.0, 30.0],
+                [3.0, 3.0, 58.0, 30.0],
                 &Default::default(),
                 c.transform,
                 g,
@@ -108,7 +110,7 @@ impl Gui {
 
             text(
                 [1.0, 0.46, 0.35, 1.0],
-                60,
+                50,
                 &format!("{:03}", self.game.get_flags_left()),
                 glyphs,
                 flag_num_transform,
@@ -128,6 +130,31 @@ impl Gui {
                 GameState::Lost => image(lost_face, face_transform, g),
             }
 
+            rectangle::Rectangle::new([0.3, 0.3, 0.3, 1.0]).draw(
+                [
+                    f64::from(self.game.cols * self.square_size) - 77.0,
+                    3.0,
+                    74.0,
+                    30.0,
+                ],
+                &Default::default(),
+                c.transform,
+                g,
+            );
+
+            let time_transform = c.transform
+                .trans(f64::from(self.game.cols * self.square_size) - 75.0, 28.0)
+                .zoom(0.5);
+
+            text(
+                [1.0, 0.46, 0.35, 1.0],
+                50,
+                &format!("{:04}", self.game.game_time()),
+                glyphs,
+                time_transform,
+                g,
+            ).unwrap();
+
             // hard coded 2 pixel offset
             let board_transform = c.transform.trans(2.0, 2.0 + f64::from(self.top_bar_height));
 
@@ -140,8 +167,8 @@ impl Gui {
 
                     let text_transform = board_transform
                         .trans(
-                            f64::from(curr_x) + f64::from(self.square_size) * 0.28,
-                            f64::from(curr_y) + f64::from(self.square_size) * 0.66,
+                            f64::from(curr_x) + f64::from(self.square_size) * 0.22,
+                            f64::from(curr_y) + f64::from(self.square_size) * 0.68,
                         )
                         .zoom(0.5);
 
@@ -202,7 +229,7 @@ impl Gui {
                             if !curr_square.is_mine && curr_square.adjacent_mines > 0 {
                                 text(
                                     Gui::get_text_color(curr_square.adjacent_mines),
-                                    40,
+                                    35,
                                     &curr_square.adjacent_mines.to_string(),
                                     glyphs,
                                     text_transform,

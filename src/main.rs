@@ -24,7 +24,7 @@ fn main() {
         .for_folder("assets")
         .unwrap();
 
-    let font = &assets.join("FiraSans-Regular.ttf");
+    let font = &assets.join("Andale-Mono.ttf");
     let mine = &assets.join("mine.png");
     let flag = &assets.join("flag.png");
     let win_face = &assets.join("cool.png");
@@ -74,7 +74,7 @@ fn main() {
         &TextureSettings::new(),
     ).unwrap();
 
-    window.set_lazy(true);
+    window.set_max_fps(30);
 
     while let Some(e) = window.next() {
         if let Some(_) = e.render_args() {
