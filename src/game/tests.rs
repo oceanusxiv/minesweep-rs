@@ -10,8 +10,8 @@ fn test_check_game_won() {
 
     for index in &game.mines_index {
         assert!(!game.check_game_won());
-        let i = *index as u32 / game.height;
-        let j = *index as u32 % game.width;
+        let i = *index as u32 / game.rows;
+        let j = *index as u32 % game.cols;
         game.map.get_mut(&Position(i, j)).unwrap().state = SquareState::Flagged;
     }
 
@@ -26,6 +26,38 @@ fn test_check_game_lost() {
 }
 
 #[test]
+fn test_update_game_state() {
+    let mut game = MineSweeper::new(9, 9, 10);
+    game.update_game_state();
+
+    assert_eq!(game.state, GameState::Ongoing);
+
+    for index in &game.mines_index.clone() {
+        assert!(!game.check_game_won());
+        let i = *index as u32 / game.rows;
+        let j = *index as u32 % game.cols;
+        game.toggle_flag_square(i, j);
+    }
+
+    game.update_game_state();
+
+    assert_eq!(game.state, GameState::Won);
+
+    game.reset();
+
+    assert_eq!(game.state, GameState::Ongoing);
+
+    let mine_index = game.mines_index[0];
+    let rows = game.rows;
+    let cols = game.cols;
+    game.reveal_square(mine_index as u32 / rows, mine_index as u32 % cols);
+
+    game.update_game_state();
+
+    assert_eq!(game.state, GameState::Lost);
+}
+
+#[test]
 fn test_get_neighbors() {
     let game = MineSweeper::new(9, 5, 10);
 
@@ -36,7 +68,7 @@ fn test_get_neighbors() {
         Position(1, 0),
         Position(0, 1),
         Position(1, 1)},
-        MineSweeper::get_neighbor_coords(&pos_1, game.width, game.height)
+        MineSweeper::get_neighbor_coords(&pos_1, game.cols, game.rows)
     );
 
     let pos_2 = Position(2, 0);
@@ -48,7 +80,7 @@ fn test_get_neighbors() {
         Position(1, 0),
         Position(3, 0),
         Position(3, 1)},
-        MineSweeper::get_neighbor_coords(&pos_2, game.width, game.height)
+        MineSweeper::get_neighbor_coords(&pos_2, game.cols, game.rows)
     );
 
     let pos_3 = Position(4, 0);
@@ -58,7 +90,7 @@ fn test_get_neighbors() {
         Position(4, 1),
         Position(3, 1),
         Position(3, 0)},
-        MineSweeper::get_neighbor_coords(&pos_3, game.width, game.height)
+        MineSweeper::get_neighbor_coords(&pos_3, game.cols, game.rows)
     );
 
     let pos_4 = Position(4, 5);
@@ -70,7 +102,7 @@ fn test_get_neighbors() {
         Position(3, 4),
         Position(3, 5),
         Position(3, 6)},
-        MineSweeper::get_neighbor_coords(&pos_4, game.width, game.height)
+        MineSweeper::get_neighbor_coords(&pos_4, game.cols, game.rows)
     );
 
     let pos_5 = Position(4, 8);
@@ -80,7 +112,7 @@ fn test_get_neighbors() {
         Position(4, 7),
         Position(3, 7),
         Position(3, 8)},
-        MineSweeper::get_neighbor_coords(&pos_5, game.width, game.height)
+        MineSweeper::get_neighbor_coords(&pos_5, game.cols, game.rows)
     );
 
     let pos_6 = Position(2, 8);
@@ -92,7 +124,7 @@ fn test_get_neighbors() {
         Position(1, 7),
         Position(1, 8),
         Position(3, 8)},
-        MineSweeper::get_neighbor_coords(&pos_6, game.width, game.height)
+        MineSweeper::get_neighbor_coords(&pos_6, game.cols, game.rows)
     );
 
     let pos_7 = Position(0, 8);
@@ -102,7 +134,7 @@ fn test_get_neighbors() {
         Position(0, 7),
         Position(1, 7),
         Position(1, 8)},
-        MineSweeper::get_neighbor_coords(&pos_7, game.width, game.height)
+        MineSweeper::get_neighbor_coords(&pos_7, game.cols, game.rows)
     );
 
     let pos_8 = Position(0, 5);
@@ -114,7 +146,7 @@ fn test_get_neighbors() {
         Position(1, 4),
         Position(1, 5),
         Position(1, 6)},
-        MineSweeper::get_neighbor_coords(&pos_8, game.width, game.height)
+        MineSweeper::get_neighbor_coords(&pos_8, game.cols, game.rows)
     );
 
     let pos_9 = Position(2, 4);
@@ -129,20 +161,21 @@ fn test_get_neighbors() {
         Position(3, 3),
         Position(3, 4),
         Position(3, 5)},
-        MineSweeper::get_neighbor_coords(&pos_9, game.width, game.height)
+        MineSweeper::get_neighbor_coords(&pos_9, game.cols, game.rows)
     );
 }
 
 #[test]
 fn test_adjacent_mines_num() {
     let mut game = MineSweeper {
-        width: 3,
-        height: 3,
+        cols: 3,
+        rows: 3,
         num_mines: 3,
         num_flagged: 0,
         rng: thread_rng(),
         mines_index: vec![0, 4, 8],
         map: HashMap::new(),
+        state: GameState::Ongoing,
     };
 
     game.populate_board();
@@ -175,13 +208,14 @@ fn test_toggle_flag() {
 #[test]
 fn test_reveal_square() {
     let mut game = MineSweeper {
-        width: 3,
-        height: 3,
+        cols: 3,
+        rows: 3,
         num_mines: 3,
         num_flagged: 0,
         rng: thread_rng(),
         mines_index: vec![0, 1, 5],
         map: HashMap::new(),
+        state: GameState::Ongoing,
     };
 
     game.populate_board();

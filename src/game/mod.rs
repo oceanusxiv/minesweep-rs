@@ -20,9 +20,16 @@ pub enum SquareState {
     Revealed,
 }
 
+#[derive(PartialEq, Eq, Debug)]
+pub enum GameState {
+    Ongoing,
+    Won,
+    Lost,
+}
+
 // convention [row, col]
 #[derive(PartialEq, Eq, Hash, Debug, Copy, Clone)]
-pub struct Position(u32, u32);
+pub struct Position(pub u32, pub u32);
 
 pub struct Square {
     pub pos: Position,
@@ -32,27 +39,29 @@ pub struct Square {
 }
 
 pub struct MineSweeper {
-    width: u32,
-    height: u32,
-    num_mines: u32,
+    pub cols: u32,
+    pub rows: u32,
+    pub num_mines: u32,
     num_flagged: u32,
     rng: ThreadRng,
     mines_index: Vec<usize>,
     map: HashMap<Position, Square>,
+    pub state: GameState,
 }
 
 impl MineSweeper {
-    pub fn new(width: u32, height: u32, num_mines: u32) -> MineSweeper {
+    pub fn new(cols: u32, rows: u32, num_mines: u32) -> MineSweeper {
         let mut rng = thread_rng();
 
         let mut game = MineSweeper {
-            width,
-            height,
+            cols,
+            rows,
             num_mines,
             num_flagged: 0,
-            mines_index: sample_indices(&mut rng, (height * width) as usize, num_mines as usize),
+            mines_index: sample_indices(&mut rng, (rows * cols) as usize, num_mines as usize),
             rng,
             map: HashMap::new(),
+            state: GameState::Ongoing,
         };
 
         game.populate_board();
@@ -64,17 +73,18 @@ impl MineSweeper {
         self.num_flagged = 0;
         self.mines_index = sample_indices(
             &mut self.rng,
-            (self.height * self.width) as usize,
+            (self.rows * self.cols) as usize,
             self.num_mines as usize,
         );
         self.map.clear();
         self.populate_board();
+        self.state = GameState::Ongoing;
     }
 
     fn populate_board(&mut self) {
         for index in &self.mines_index {
-            let i = *index as u32 / self.height;
-            let j = *index as u32 % self.width;
+            let i = *index as u32 / self.rows;
+            let j = *index as u32 % self.cols;
             self.map.insert(
                 Position(i, j),
                 Square {
@@ -86,15 +96,15 @@ impl MineSweeper {
             );
         }
 
-        for i in 0..self.height {
-            for j in 0..self.width {
+        for i in 0..self.rows {
+            for j in 0..self.cols {
                 let neighbors =
-                    MineSweeper::get_neighbor_coords(&Position(i, j), self.width, self.height);
+                    MineSweeper::get_neighbor_coords(&Position(i, j), self.cols, self.rows);
                 let adjacent_mines = neighbors
                     .iter()
                     .filter(|&x| {
                         self.mines_index
-                            .contains(&((x.0 * self.width + x.1) as usize))
+                            .contains(&((x.0 * self.cols + x.1) as usize))
                     })
                     .count() as u32;
                 self.map.entry(Position(i, j)).or_insert(Square {
@@ -107,7 +117,7 @@ impl MineSweeper {
         }
     }
 
-    fn get_neighbor_coords(curr_pos: &Position, width: u32, height: u32) -> HashSet<Position> {
+    fn get_neighbor_coords(curr_pos: &Position, cols: u32, rows: u32) -> HashSet<Position> {
         let mut neighbors: HashSet<Position> = HashSet::new();
 
         if curr_pos.0 > 0 {
@@ -117,7 +127,7 @@ impl MineSweeper {
                 neighbors.insert(Position(curr_pos.0 - 1, curr_pos.1 - 1));
             }
 
-            if curr_pos.1 < width - 1 {
+            if curr_pos.1 < cols - 1 {
                 neighbors.insert(Position(curr_pos.0 - 1, curr_pos.1 + 1));
             }
         }
@@ -126,19 +136,19 @@ impl MineSweeper {
             neighbors.insert(Position(curr_pos.0, curr_pos.1 - 1));
         }
 
-        if curr_pos.0 < height - 1 {
+        if curr_pos.0 < rows - 1 {
             neighbors.insert(Position(curr_pos.0 + 1, curr_pos.1));
 
             if curr_pos.1 > 0 {
                 neighbors.insert(Position(curr_pos.0 + 1, curr_pos.1 - 1));
             }
 
-            if curr_pos.1 < width - 1 {
+            if curr_pos.1 < cols - 1 {
                 neighbors.insert(Position(curr_pos.0 + 1, curr_pos.1 + 1));
             }
         }
 
-        if curr_pos.1 < width - 1 {
+        if curr_pos.1 < cols - 1 {
             neighbors.insert(Position(curr_pos.0, curr_pos.1 + 1));
         }
 
@@ -148,9 +158,9 @@ impl MineSweeper {
     pub fn show(&self) {
         let mut table = Table::new();
 
-        for i in 0..self.height {
+        for i in 0..self.rows {
             let mut row: Vec<Cell> = Vec::new();
-            for j in 0..self.width {
+            for j in 0..self.cols {
                 let curr_square = &self.map[&Position(i, j)];
                 if curr_square.is_mine {
                     row.push(Cell::new("M"));
@@ -166,7 +176,17 @@ impl MineSweeper {
         table.printstd();
     }
 
-    pub fn check_game_won(&self) -> bool {
+    pub fn update_game_state(&mut self) {
+        if self.check_game_won() {
+            self.state = GameState::Won;
+        } else if self.check_game_lost() {
+            self.state = GameState::Lost;
+        } else {
+            self.state = GameState::Ongoing;
+        }
+    }
+
+    fn check_game_won(&self) -> bool {
         if self.num_flagged < self.num_mines {
             false
         } else {
@@ -176,15 +196,15 @@ impl MineSweeper {
         }
     }
 
-    pub fn check_game_lost(&self) -> bool {
+    fn check_game_lost(&self) -> bool {
         self.map
             .values()
             .any(|x| x.is_mine && x.state == SquareState::Revealed)
     }
 
     pub fn toggle_flag_square(&mut self, row: u32, col: u32) {
-        assert!(row < self.height);
-        assert!(col < self.width);
+        assert!(row < self.rows);
+        assert!(col < self.cols);
 
         if self.map[&Position(row, col)].state == SquareState::Flagged {
             self.map.get_mut(&Position(row, col)).unwrap().state = SquareState::Covered;
@@ -210,7 +230,7 @@ impl MineSweeper {
                 let curr_square = &self.map[&Position(row, col)];
 
                 if !curr_square.is_mine && curr_square.adjacent_mines == 0 {
-                    for p in MineSweeper::get_neighbor_coords(&pos, self.width, self.height) {
+                    for p in MineSweeper::get_neighbor_coords(&pos, self.cols, self.rows) {
                         candidates.push_back(p);
                     }
                 }
@@ -221,8 +241,8 @@ impl MineSweeper {
     }
 
     pub fn reveal_square(&mut self, row: u32, col: u32) {
-        assert!(row < self.height);
-        assert!(col < self.width);
+        assert!(row < self.rows);
+        assert!(col < self.cols);
 
         if self.map[&Position(row, col)].state == SquareState::Covered {
             let all_reveal = self.find_reveals(row, col);
