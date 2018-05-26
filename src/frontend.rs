@@ -10,10 +10,15 @@ pub struct Icons {
     pub lost_face: G2dTexture,
 }
 
+const TOP_BAR_HEIGHT: u32 = 27;
+const SQUARE_SIZE: u32 = 20;
+const MARGIN: f64 = 2.0;
+const UI_FONT_SIZE: u32 = 40;
+const UI_FONT_Y_OFFSET: f64 = 22.0;
+const UI_RECT_HEIGHT: f64 = TOP_BAR_HEIGHT as f64 - 2.0 * MARGIN;
+
 pub struct Gui {
     game: MineSweeper,
-    square_size: u32,
-    top_bar_height: u32,
     selected_position: Option<Position>,
 }
 
@@ -21,8 +26,6 @@ impl Gui {
     pub fn new(cols: u32, rows: u32, num_mines: u32) -> Gui {
         Gui {
             game: MineSweeper::new(cols, rows, num_mines),
-            square_size: 20,
-            top_bar_height: 27,
             selected_position: None,
         }
     }
@@ -30,21 +33,18 @@ impl Gui {
     // convention [width, height]
     pub fn get_window_size(&self) -> [u32; 2] {
         [
-            self.game.cols * self.square_size,
-            self.game.rows * self.square_size + self.top_bar_height,
+            self.game.cols * SQUARE_SIZE,
+            self.game.rows * SQUARE_SIZE + TOP_BAR_HEIGHT,
         ]
     }
 
     pub fn handle_mouse_position(&mut self, x: f64, mut y: f64) {
-        y -= f64::from(self.top_bar_height);
+        y -= f64::from(TOP_BAR_HEIGHT);
 
-        if x >= 0.0 && y >= 0.0 && x < f64::from(self.game.cols * self.square_size)
-            && y < f64::from(self.game.rows * self.square_size)
+        if x >= 0.0 && y >= 0.0 && x < f64::from(self.game.cols * SQUARE_SIZE)
+            && y < f64::from(self.game.rows * SQUARE_SIZE)
         {
-            self.selected_position = Some(Position(
-                y as u32 / self.square_size,
-                x as u32 / self.square_size,
-            ));
+            self.selected_position = Some(Position(y as u32 / SQUARE_SIZE, x as u32 / SQUARE_SIZE));
         } else {
             self.selected_position = None;
         }
@@ -100,30 +100,26 @@ impl Gui {
         glyphs: &mut Glyphs,
         icons: &Icons,
     ) {
-        let margin = 2.0;
-        let ui_font_size: u32 = 40;
-        let ui_font_vert = 22.0;
-        let ui_rect_height = f64::from(self.top_bar_height) - 2.0 * margin;
         window.draw_2d(event, |c, g| {
             clear([0.5, 0.5, 0.5, 1.0], g);
 
             rectangle::Rectangle::new([0.3, 0.3, 0.3, 1.0]).draw(
                 [
-                    margin,
-                    margin,
-                    f64::from(ui_font_size) * 1.15,
-                    ui_rect_height,
+                    MARGIN,
+                    MARGIN,
+                    f64::from(UI_FONT_SIZE) * 1.15,
+                    UI_RECT_HEIGHT,
                 ],
                 &Default::default(),
                 c.transform,
                 g,
             );
 
-            let flag_num_transform = c.transform.trans(3.5, ui_font_vert).zoom(0.5);
+            let flag_num_transform = c.transform.trans(3.5, UI_FONT_Y_OFFSET).zoom(0.5);
 
             text(
                 [1.0, 0.46, 0.35, 1.0],
-                ui_font_size,
+                UI_FONT_SIZE,
                 &format!("{:03}", self.game.get_flags_left()),
                 glyphs,
                 flag_num_transform,
@@ -131,10 +127,7 @@ impl Gui {
             ).unwrap();
 
             let face_transform = c.transform
-                .trans(
-                    f64::from(self.game.cols * self.square_size) * 0.5 - 12.8,
-                    5.0,
-                )
+                .trans(f64::from(self.game.cols * SQUARE_SIZE) * 0.5 - 12.8, 5.0)
                 .zoom(0.14);
 
             match self.game.state {
@@ -143,13 +136,13 @@ impl Gui {
                 GameState::Lost => image(&icons.lost_face, face_transform, g),
             }
 
-            let time_rect_width = f64::from(ui_font_size) * 1.5;
+            let time_rect_width = f64::from(UI_FONT_SIZE) * 1.5;
             rectangle::Rectangle::new([0.3, 0.3, 0.3, 1.0]).draw(
                 [
-                    f64::from(self.game.cols * self.square_size) - time_rect_width - margin,
-                    margin,
+                    f64::from(self.game.cols * SQUARE_SIZE) - time_rect_width - MARGIN,
+                    MARGIN,
                     time_rect_width,
-                    ui_rect_height,
+                    UI_RECT_HEIGHT,
                 ],
                 &Default::default(),
                 c.transform,
@@ -158,14 +151,14 @@ impl Gui {
 
             let time_transform = c.transform
                 .trans(
-                    f64::from(self.game.cols * self.square_size) - 60.0,
-                    ui_font_vert,
+                    f64::from(self.game.cols * SQUARE_SIZE) - 60.0,
+                    UI_FONT_Y_OFFSET,
                 )
                 .zoom(0.5);
 
             text(
                 [1.0, 0.46, 0.35, 1.0],
-                ui_font_size,
+                UI_FONT_SIZE,
                 &format!("{:04}", self.game.game_time()),
                 glyphs,
                 time_transform,
@@ -173,26 +166,26 @@ impl Gui {
             ).unwrap();
 
             // hard coded 2 pixel offset
-            let board_transform = c.transform.trans(2.0, 2.0 + f64::from(self.top_bar_height));
+            let board_transform = c.transform.trans(2.0, 2.0 + f64::from(TOP_BAR_HEIGHT));
 
             for i in 0..self.game.rows {
                 for j in 0..self.game.cols {
-                    let curr_x = j * self.square_size;
-                    let curr_y = i * self.square_size;
+                    let curr_x = j * SQUARE_SIZE;
+                    let curr_y = i * SQUARE_SIZE;
 
                     let curr_square = self.game.get_square(i, j);
 
                     let text_transform = board_transform
                         .trans(
-                            f64::from(curr_x) + f64::from(self.square_size) * 0.19,
-                            f64::from(curr_y) + f64::from(self.square_size) * 0.65,
+                            f64::from(curr_x) + f64::from(SQUARE_SIZE) * 0.19,
+                            f64::from(curr_y) + f64::from(SQUARE_SIZE) * 0.65,
                         )
                         .zoom(0.5);
 
                     let mine_transform = board_transform
                         .trans(
-                            f64::from(curr_x) + f64::from(self.square_size) * 0.06,
-                            f64::from(curr_y) + f64::from(self.square_size) * 0.06,
+                            f64::from(curr_x) + f64::from(SQUARE_SIZE) * 0.06,
+                            f64::from(curr_y) + f64::from(SQUARE_SIZE) * 0.06,
                         )
                         .zoom(0.07);
 
@@ -204,8 +197,8 @@ impl Gui {
                                     [
                                         f64::from(curr_x),
                                         f64::from(curr_y),
-                                        f64::from(self.square_size) - 4.0,
-                                        f64::from(self.square_size) - 4.0,
+                                        f64::from(SQUARE_SIZE) - 4.0,
+                                        f64::from(SQUARE_SIZE) - 4.0,
                                     ],
                                     &Default::default(),
                                     board_transform,
@@ -231,8 +224,8 @@ impl Gui {
                                 [
                                     f64::from(curr_x),
                                     f64::from(curr_y),
-                                    f64::from(self.square_size) - 4.0,
-                                    f64::from(self.square_size) - 4.0,
+                                    f64::from(SQUARE_SIZE) - 4.0,
+                                    f64::from(SQUARE_SIZE) - 4.0,
                                 ],
                                 &Default::default(),
                                 board_transform,
@@ -261,8 +254,8 @@ impl Gui {
                                     [
                                         f64::from(curr_x),
                                         f64::from(curr_y),
-                                        f64::from(self.square_size) - 4.0,
-                                        f64::from(self.square_size) - 4.0,
+                                        f64::from(SQUARE_SIZE) - 4.0,
+                                        f64::from(SQUARE_SIZE) - 4.0,
                                     ],
                                     &Default::default(),
                                     board_transform,
@@ -271,8 +264,8 @@ impl Gui {
 
                             let flag_transform = board_transform
                                 .trans(
-                                    f64::from(curr_x) + f64::from(self.square_size) * 0.085,
-                                    f64::from(curr_y) + f64::from(self.square_size) * 0.085,
+                                    f64::from(curr_x) + f64::from(SQUARE_SIZE) * 0.085,
+                                    f64::from(curr_y) + f64::from(SQUARE_SIZE) * 0.085,
                                 )
                                 .zoom(0.10);
 

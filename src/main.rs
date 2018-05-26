@@ -122,8 +122,14 @@ fn main() {
 
         if let Some(button) = e.press_args() {
             match button {
-                Button::Mouse(m) => front.handle_mouse_click(m),
                 Button::Keyboard(k) => front.handle_key_press(k),
+                _ => (),
+            }
+        }
+
+        if let Some(button) = e.release_args() {
+            match button {
+                Button::Mouse(m) => front.handle_mouse_click(m),
                 _ => (),
             }
         }
