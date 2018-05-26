@@ -123,6 +123,7 @@ fn main() {
         if let Some(button) = e.press_args() {
             match button {
                 Button::Keyboard(k) => front.handle_key_press(k),
+                Button::Mouse(m) => front.handle_mouse_press(m),
                 _ => (),
             }
         }

@@ -30,7 +30,6 @@ pub enum GameState {
 pub struct Position(pub u32, pub u32);
 
 pub struct Square {
-    pub pos: Position,
     pub is_mine: bool,
     pub adjacent_mines: u32,
     pub state: SquareState,
@@ -111,7 +110,6 @@ impl MineSweeper {
             self.map.insert(
                 Position(i, j),
                 Square {
-                    pos: Position(i, j),
                     is_mine: true,
                     adjacent_mines: 0,
                     state: SquareState::Covered,
@@ -131,7 +129,6 @@ impl MineSweeper {
                     })
                     .count() as u32;
                 self.map.entry(Position(i, j)).or_insert(Square {
-                    pos: Position(i, j),
                     is_mine: false,
                     adjacent_mines,
                     state: SquareState::Covered,

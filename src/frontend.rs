@@ -20,6 +20,8 @@ const UI_RECT_HEIGHT: f64 = TOP_BAR_HEIGHT as f64 - 2.0 * MARGIN;
 pub struct Gui {
     game: MineSweeper,
     selected_position: Option<Position>,
+    left_mouse_pressed: bool,
+    right_mouse_pressed: bool,
 }
 
 impl Gui {
@@ -27,6 +29,8 @@ impl Gui {
         Gui {
             game: MineSweeper::new(cols, rows, num_mines),
             selected_position: None,
+            left_mouse_pressed: false,
+            right_mouse_pressed: false,
         }
     }
 
@@ -42,9 +46,12 @@ impl Gui {
         y -= f64::from(TOP_BAR_HEIGHT);
 
         if x >= 0.0 && y >= 0.0 && x < f64::from(self.game.cols * SQUARE_SIZE)
-            && y < f64::from(self.game.rows * SQUARE_SIZE)
+            && y < f64::from(self.game.rows * SQUARE_SIZE) && !self.left_mouse_pressed
+            && !self.right_mouse_pressed
         {
             self.selected_position = Some(Position(y as u32 / SQUARE_SIZE, x as u32 / SQUARE_SIZE));
+        } else if self.left_mouse_pressed || self.right_mouse_pressed {
+            return;
         } else {
             self.selected_position = None;
         }
@@ -56,17 +63,27 @@ impl Gui {
                 MouseButton::Left => {
                     self.game.reveal_square(&self.selected_position.unwrap());
                     self.game.first_moved();
+                    self.left_mouse_pressed = false;
                 }
                 MouseButton::Right => {
                     self.game
                         .toggle_flag_square(&self.selected_position.unwrap());
                     self.game.first_moved();
+                    self.right_mouse_pressed = false;
                 }
                 _ => (),
             }
         }
 
         self.game.update_game_state();
+    }
+
+    pub fn handle_mouse_press(&mut self, button: MouseButton) {
+        match button {
+            MouseButton::Left => self.left_mouse_pressed = true,
+            MouseButton::Right => self.right_mouse_pressed = true,
+            _ => (),
+        }
     }
 
     pub fn handle_key_press(&mut self, key: Key) {
@@ -140,8 +157,16 @@ impl Gui {
 
                     match curr_square.state {
                         SquareState::Covered => {
+                            let color;
+
+                            if self.left_mouse_pressed && self.selected_position.is_some() && Position(i, j) == self.selected_position.unwrap() {
+                                color = [0.8, 0.8, 0.8, 1.0];
+                            } else {
+                                color = [0.9, 0.9, 0.9, 1.0];
+                            }
+
                             rectangle::Rectangle::new_border([0.8, 0.8, 0.8, 1.0], 1.0)
-                                .color([0.9, 0.9, 0.9, 1.0])
+                                .color(color)
                                 .draw(
                                     [
                                         f64::from(curr_x),
@@ -248,7 +273,7 @@ impl Gui {
 
                             image(&icons.flag, flag_transform, g);
                         }
-                        _ => ()
+                        _ => (),
                     }
                 }
             }
