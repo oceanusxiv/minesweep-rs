@@ -13,7 +13,7 @@ Controls:
 * `Esc` - exit game
 
 ## Examples
-Number of flags used on left, timer on right.
+Number of flags left displayed on left, time elapsed on right.
 ![game going](ongoing.png)
 
 Game board revealed once the game is lost.
@@ -52,6 +52,6 @@ OPTIONS:
     -m, --mines <MINES>         Sets max number of mines (Custom level only)
     -r, --rows <ROWS>           Sets number of rows (Custom level only)
 ```
-Beginner: 8x8 grid, 10 mines
-Intermediate: 16x16 grid, 40 mines
-Exprt: 24x24 grid, 99 mines
+* Beginner: 8x8 grid, 10 mines
+* Intermediate: 16x16 grid, 40 mines
+* Expert: 24x24 grid, 99 mines
