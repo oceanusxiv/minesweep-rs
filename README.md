@@ -11,6 +11,7 @@ Controls:
 * `Left click` - reveal cell
 * `Right click` - toggle flag cell
 * `Esc` - exit game
+* `Up/Down arrow` - cycle difficulty (Beginner <-> Intermediate <-> Expert <-> Custom)
 
 ## Examples
 Number of flags left displayed on left, time elapsed on right.

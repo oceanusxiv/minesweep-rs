@@ -210,6 +210,7 @@ impl Gui {
             // hard coded 2 pixel offset
             let board_transform = c.transform.trans(2.0, 2.0 + f64::from(TOP_BAR_HEIGHT));
 
+            // render all triangles first in batch
             for i in 0..self.game.rows {
                 for j in 0..self.game.cols {
                     let curr_x = j * SQUARE_SIZE;
@@ -291,6 +292,7 @@ impl Gui {
                 }
             }
 
+            // then render all texts and images in batch
             for i in 0..self.game.rows {
                 for j in 0..self.game.cols {
                     let curr_x = j * SQUARE_SIZE;
