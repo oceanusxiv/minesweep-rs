@@ -16,6 +16,14 @@ const MARGIN: f64 = 2.0;
 const UI_FONT_SIZE: u32 = 40;
 const UI_FONT_Y_OFFSET: f64 = 22.0;
 const UI_RECT_HEIGHT: f64 = TOP_BAR_HEIGHT as f64 - 2.0 * MARGIN;
+const BACKGROUND_COLOR: types::Color = [0.5, 0.5, 0.5, 1.0];
+const CELL_BORDER_COLOR: types::Color = [0.8, 0.8, 0.8, 1.0];
+const MINE_BORDER_COLOR: types::Color = [0.8, 0.0, 0.0, 1.0];
+const CELL_COVERED_COLOR: types::Color = [0.9, 0.9, 0.9, 1.0];
+const CELL_REVEALED_COLOR: types::Color = [0.7, 0.7, 0.7, 1.0];
+const MINE_REVEALED_COLOR: types::Color = [0.7, 0.0, 0.0, 1.0];
+const UI_RECT_COLOR: types::Color = [0.3, 0.3, 0.3, 1.0];
+const UI_TEXT_COLOR: types::Color = [1.0, 0.46, 0.35, 1.0];
 
 pub struct Gui {
     game: MineSweeper,
@@ -118,9 +126,9 @@ impl Gui {
         icons: &Icons,
     ) {
         window.draw_2d(event, |c, g| {
-            clear([0.5, 0.5, 0.5, 1.0], g);
+            clear(BACKGROUND_COLOR, g);
 
-            rectangle::Rectangle::new([0.3, 0.3, 0.3, 1.0]).draw(
+            rectangle::Rectangle::new(UI_RECT_COLOR).draw(
                 [
                     MARGIN,
                     MARGIN,
@@ -133,7 +141,7 @@ impl Gui {
             );
 
             let time_rect_width = f64::from(UI_FONT_SIZE) * 1.5;
-            rectangle::Rectangle::new([0.3, 0.3, 0.3, 1.0]).draw(
+            rectangle::Rectangle::new(UI_RECT_COLOR).draw(
                 [
                     f64::from(self.game.cols * SQUARE_SIZE) - time_rect_width - MARGIN,
                     MARGIN,
@@ -162,12 +170,12 @@ impl Gui {
                             if self.left_mouse_pressed && self.selected_position.is_some()
                                 && Position(i, j) == self.selected_position.unwrap()
                             {
-                                color = [0.8, 0.8, 0.8, 1.0];
+                                color = CELL_REVEALED_COLOR;
                             } else {
-                                color = [0.9, 0.9, 0.9, 1.0];
+                                color = CELL_COVERED_COLOR;
                             }
 
-                            rectangle::Rectangle::new_border([0.8, 0.8, 0.8, 1.0], 1.0)
+                            rectangle::Rectangle::new_border(CELL_BORDER_COLOR, 1.0)
                                 .color(color)
                                 .draw(
                                     [
@@ -182,16 +190,16 @@ impl Gui {
                                 );
                         }
                         SquareState::Revealed => {
-                            let mut rect = rectangle::Rectangle::new([0.0, 0.0, 0.0, 0.0]);
+                            let rect;
 
                             if curr_square.is_mine {
-                                rect = rect.color([0.7, 0.0, 0.0, 1.0]).border(Border {
-                                    color: [0.8, 0.0, 0.0, 1.0],
+                                rect = rectangle::Rectangle::new(MINE_BORDER_COLOR).border(Border {
+                                    color: MINE_REVEALED_COLOR,
                                     radius: 1.0,
                                 });
                             } else {
-                                rect = rect.color([0.7, 0.7, 0.7, 1.0]).border(Border {
-                                    color: [0.8, 0.8, 0.8, 1.0],
+                                rect = rectangle::Rectangle::new(CELL_BORDER_COLOR).border(Border {
+                                    color: CELL_REVEALED_COLOR,
                                     radius: 1.0,
                                 });
                             }
@@ -209,8 +217,8 @@ impl Gui {
                             );
                         }
                         SquareState::Flagged => {
-                            rectangle::Rectangle::new_border([0.8, 0.8, 0.8, 1.0], 1.0)
-                                .color([0.9, 0.9, 0.9, 1.0])
+                            rectangle::Rectangle::new_border(CELL_BORDER_COLOR, 1.0)
+                                .color(CELL_COVERED_COLOR)
                                 .draw(
                                     [
                                         f64::from(curr_x),
@@ -283,7 +291,7 @@ impl Gui {
             let flag_num_transform = c.transform.trans(3.5, UI_FONT_Y_OFFSET).zoom(0.5);
 
             text(
-                [1.0, 0.46, 0.35, 1.0],
+                UI_TEXT_COLOR,
                 UI_FONT_SIZE,
                 &format!("{:03}", self.game.get_flags_left()),
                 glyphs,
@@ -309,7 +317,7 @@ impl Gui {
                 .zoom(0.5);
 
             text(
-                [1.0, 0.46, 0.35, 1.0],
+                UI_TEXT_COLOR,
                 UI_FONT_SIZE,
                 &format!("{:04}", self.game.game_time()),
                 glyphs,
