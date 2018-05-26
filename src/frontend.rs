@@ -46,30 +46,30 @@ impl Gui {
         y -= f64::from(TOP_BAR_HEIGHT);
 
         if x >= 0.0 && y >= 0.0 && x < f64::from(self.game.cols * SQUARE_SIZE)
-            && y < f64::from(self.game.rows * SQUARE_SIZE) && !self.left_mouse_pressed
-            && !self.right_mouse_pressed
+            && y < f64::from(self.game.rows * SQUARE_SIZE)
         {
             self.selected_position = Some(Position(y as u32 / SQUARE_SIZE, x as u32 / SQUARE_SIZE));
-        } else if self.left_mouse_pressed || self.right_mouse_pressed {
-            return;
         } else {
             self.selected_position = None;
         }
     }
 
     pub fn handle_mouse_click(&mut self, button: MouseButton) {
+        match button {
+            MouseButton::Left => self.left_mouse_pressed = false,
+            MouseButton::Right => self.right_mouse_pressed = false,
+            _ => (),
+        }
         if self.game.state == GameState::Ongoing && self.selected_position.is_some() {
             match button {
                 MouseButton::Left => {
                     self.game.reveal_square(&self.selected_position.unwrap());
                     self.game.first_moved();
-                    self.left_mouse_pressed = false;
                 }
                 MouseButton::Right => {
                     self.game
                         .toggle_flag_square(&self.selected_position.unwrap());
                     self.game.first_moved();
-                    self.right_mouse_pressed = false;
                 }
                 _ => (),
             }
@@ -159,7 +159,9 @@ impl Gui {
                         SquareState::Covered => {
                             let color;
 
-                            if self.left_mouse_pressed && self.selected_position.is_some() && Position(i, j) == self.selected_position.unwrap() {
+                            if self.left_mouse_pressed && self.selected_position.is_some()
+                                && Position(i, j) == self.selected_position.unwrap()
+                            {
                                 color = [0.8, 0.8, 0.8, 1.0];
                             } else {
                                 color = [0.9, 0.9, 0.9, 1.0];
