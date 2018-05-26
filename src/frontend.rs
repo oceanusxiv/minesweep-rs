@@ -115,27 +115,6 @@ impl Gui {
                 g,
             );
 
-            let flag_num_transform = c.transform.trans(3.5, UI_FONT_Y_OFFSET).zoom(0.5);
-
-            text(
-                [1.0, 0.46, 0.35, 1.0],
-                UI_FONT_SIZE,
-                &format!("{:03}", self.game.get_flags_left()),
-                glyphs,
-                flag_num_transform,
-                g,
-            ).unwrap();
-
-            let face_transform = c.transform
-                .trans(f64::from(self.game.cols * SQUARE_SIZE) * 0.5 - 12.8, 5.0)
-                .zoom(0.14);
-
-            match self.game.state {
-                GameState::Ongoing => image(&icons.ongoing_face, face_transform, g),
-                GameState::Won => image(&icons.win_face, face_transform, g),
-                GameState::Lost => image(&icons.lost_face, face_transform, g),
-            }
-
             let time_rect_width = f64::from(UI_FONT_SIZE) * 1.5;
             rectangle::Rectangle::new([0.3, 0.3, 0.3, 1.0]).draw(
                 [
@@ -149,22 +128,6 @@ impl Gui {
                 g,
             );
 
-            let time_transform = c.transform
-                .trans(
-                    f64::from(self.game.cols * SQUARE_SIZE) - 60.0,
-                    UI_FONT_Y_OFFSET,
-                )
-                .zoom(0.5);
-
-            text(
-                [1.0, 0.46, 0.35, 1.0],
-                UI_FONT_SIZE,
-                &format!("{:04}", self.game.game_time()),
-                glyphs,
-                time_transform,
-                g,
-            ).unwrap();
-
             // hard coded 2 pixel offset
             let board_transform = c.transform.trans(2.0, 2.0 + f64::from(TOP_BAR_HEIGHT));
 
@@ -174,20 +137,6 @@ impl Gui {
                     let curr_y = i * SQUARE_SIZE;
 
                     let curr_square = self.game.get_square(i, j);
-
-                    let text_transform = board_transform
-                        .trans(
-                            f64::from(curr_x) + f64::from(SQUARE_SIZE) * 0.19,
-                            f64::from(curr_y) + f64::from(SQUARE_SIZE) * 0.65,
-                        )
-                        .zoom(0.5);
-
-                    let mine_transform = board_transform
-                        .trans(
-                            f64::from(curr_x) + f64::from(SQUARE_SIZE) * 0.06,
-                            f64::from(curr_y) + f64::from(SQUARE_SIZE) * 0.06,
-                        )
-                        .zoom(0.07);
 
                     match curr_square.state {
                         SquareState::Covered => {
@@ -231,7 +180,49 @@ impl Gui {
                                 board_transform,
                                 g,
                             );
+                        }
+                        SquareState::Flagged => {
+                            rectangle::Rectangle::new_border([0.8, 0.8, 0.8, 1.0], 1.0)
+                                .color([0.9, 0.9, 0.9, 1.0])
+                                .draw(
+                                    [
+                                        f64::from(curr_x),
+                                        f64::from(curr_y),
+                                        f64::from(SQUARE_SIZE) - 4.0,
+                                        f64::from(SQUARE_SIZE) - 4.0,
+                                    ],
+                                    &Default::default(),
+                                    board_transform,
+                                    g,
+                                );
+                        }
+                    }
+                }
+            }
 
+            for i in 0..self.game.rows {
+                for j in 0..self.game.cols {
+                    let curr_x = j * SQUARE_SIZE;
+                    let curr_y = i * SQUARE_SIZE;
+
+                    let curr_square = self.game.get_square(i, j);
+
+                    let text_transform = board_transform
+                        .trans(
+                            f64::from(curr_x) + f64::from(SQUARE_SIZE) * 0.19,
+                            f64::from(curr_y) + f64::from(SQUARE_SIZE) * 0.65,
+                        )
+                        .zoom(0.5);
+
+                    let mine_transform = board_transform
+                        .trans(
+                            f64::from(curr_x) + f64::from(SQUARE_SIZE) * 0.06,
+                            f64::from(curr_y) + f64::from(SQUARE_SIZE) * 0.06,
+                        )
+                        .zoom(0.07);
+
+                    match curr_square.state {
+                        SquareState::Revealed => {
                             if curr_square.is_mine {
                                 image(&icons.mine, mine_transform, g);
                             }
@@ -248,20 +239,6 @@ impl Gui {
                             }
                         }
                         SquareState::Flagged => {
-                            rectangle::Rectangle::new_border([0.8, 0.8, 0.8, 1.0], 1.0)
-                                .color([0.9, 0.9, 0.9, 1.0])
-                                .draw(
-                                    [
-                                        f64::from(curr_x),
-                                        f64::from(curr_y),
-                                        f64::from(SQUARE_SIZE) - 4.0,
-                                        f64::from(SQUARE_SIZE) - 4.0,
-                                    ],
-                                    &Default::default(),
-                                    board_transform,
-                                    g,
-                                );
-
                             let flag_transform = board_transform
                                 .trans(
                                     f64::from(curr_x) + f64::from(SQUARE_SIZE) * 0.085,
@@ -271,9 +248,47 @@ impl Gui {
 
                             image(&icons.flag, flag_transform, g);
                         }
+                        _ => ()
                     }
                 }
             }
+
+            let flag_num_transform = c.transform.trans(3.5, UI_FONT_Y_OFFSET).zoom(0.5);
+
+            text(
+                [1.0, 0.46, 0.35, 1.0],
+                UI_FONT_SIZE,
+                &format!("{:03}", self.game.get_flags_left()),
+                glyphs,
+                flag_num_transform,
+                g,
+            ).unwrap();
+
+            let face_transform = c.transform
+                .trans(f64::from(self.game.cols * SQUARE_SIZE) * 0.5 - 12.8, 5.0)
+                .zoom(0.14);
+
+            match self.game.state {
+                GameState::Ongoing => image(&icons.ongoing_face, face_transform, g),
+                GameState::Won => image(&icons.win_face, face_transform, g),
+                GameState::Lost => image(&icons.lost_face, face_transform, g),
+            }
+
+            let time_transform = c.transform
+                .trans(
+                    f64::from(self.game.cols * SQUARE_SIZE) - 60.0,
+                    UI_FONT_Y_OFFSET,
+                )
+                .zoom(0.5);
+
+            text(
+                [1.0, 0.46, 0.35, 1.0],
+                UI_FONT_SIZE,
+                &format!("{:04}", self.game.game_time()),
+                glyphs,
+                time_transform,
+                g,
+            ).unwrap();
         });
     }
 }
