@@ -215,7 +215,9 @@ impl MineSweeper {
         assert!(curr_pos.0 < self.rows);
         assert!(curr_pos.1 < self.cols);
 
-        if self.map[curr_pos].state == SquareState::Flagged {
+        if self.map[curr_pos].state == SquareState::Revealed {
+            return;
+        } else if self.map[curr_pos].state == SquareState::Flagged {
             self.map.get_mut(curr_pos).unwrap().state = SquareState::Covered;
             self.num_flagged -= 1;
         } else {
