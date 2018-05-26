@@ -2,9 +2,12 @@
 name = "minesweep-rs"
 version = "0.1.0"
 authors = ["Eric Fang <eric1221bday@gmail.com>"]
+description = "Windows minesweeoer clone in Rust"
+repository = "https://github.com/eric1221bday/minesweep-rs"
 
 [dependencies]
 piston_window = "*"
 find_folder = "*"
 rand = "*"
 maplit = "*"
+clap = "*"

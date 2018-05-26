@@ -2,6 +2,14 @@ use game::{GameState, MineSweeper, Position, SquareState};
 use piston_window::rectangle::Border;
 use piston_window::*;
 
+pub struct Icons {
+    pub mine: G2dTexture,
+    pub flag: G2dTexture,
+    pub win_face: G2dTexture,
+    pub ongoing_face: G2dTexture,
+    pub lost_face: G2dTexture,
+}
+
 pub struct Gui {
     game: MineSweeper,
     square_size: u32,
@@ -10,11 +18,11 @@ pub struct Gui {
 }
 
 impl Gui {
-    pub fn new() -> Gui {
+    pub fn new(cols: u32, rows: u32, num_mines: u32) -> Gui {
         Gui {
-            game: MineSweeper::new(9, 9, 10),
-            square_size: 30,
-            top_bar_height: 35,
+            game: MineSweeper::new(cols, rows, num_mines),
+            square_size: 20,
+            top_bar_height: 27,
             selected_position: None,
         }
     }
@@ -90,27 +98,27 @@ impl Gui {
         window: &mut PistonWindow,
         event: &Event,
         glyphs: &mut Glyphs,
-        mine: &G2dTexture,
-        flag: &G2dTexture,
-        win_face: &G2dTexture,
-        ongoing_face: &G2dTexture,
-        lost_face: &G2dTexture,
+        icons: &Icons,
     ) {
+        let margin = 2.0;
+        let ui_font_size: u32 = 40;
+        let ui_font_vert = 22.0;
+        let ui_rect_height = f64::from(self.top_bar_height) - 2.0*margin;
         window.draw_2d(event, |c, g| {
             clear([0.5, 0.5, 0.5, 1.0], g);
 
             rectangle::Rectangle::new([0.3, 0.3, 0.3, 1.0]).draw(
-                [3.0, 3.0, 58.0, 30.0],
+                [margin, margin, f64::from(ui_font_size)*1.15, ui_rect_height],
                 &Default::default(),
                 c.transform,
                 g,
             );
 
-            let flag_num_transform = c.transform.trans(4.8, 28.0).zoom(0.5);
+            let flag_num_transform = c.transform.trans(3.5, ui_font_vert).zoom(0.5);
 
             text(
                 [1.0, 0.46, 0.35, 1.0],
-                50,
+                ui_font_size,
                 &format!("{:03}", self.game.get_flags_left()),
                 glyphs,
                 flag_num_transform,
@@ -122,20 +130,21 @@ impl Gui {
                     f64::from(self.game.cols * self.square_size) * 0.5 - 12.8,
                     5.0,
                 )
-                .zoom(0.2);
+                .zoom(0.14);
 
             match self.game.state {
-                GameState::Ongoing => image(ongoing_face, face_transform, g),
-                GameState::Won => image(win_face, face_transform, g),
-                GameState::Lost => image(lost_face, face_transform, g),
+                GameState::Ongoing => image(&icons.ongoing_face, face_transform, g),
+                GameState::Won => image(&icons.win_face, face_transform, g),
+                GameState::Lost => image(&icons.lost_face, face_transform, g),
             }
 
+            let time_rect_width = f64::from(ui_font_size)*1.5;
             rectangle::Rectangle::new([0.3, 0.3, 0.3, 1.0]).draw(
                 [
-                    f64::from(self.game.cols * self.square_size) - 77.0,
-                    3.0,
-                    74.0,
-                    30.0,
+                    f64::from(self.game.cols * self.square_size) - time_rect_width - margin,
+                    margin,
+                    time_rect_width,
+                    ui_rect_height,
                 ],
                 &Default::default(),
                 c.transform,
@@ -143,12 +152,12 @@ impl Gui {
             );
 
             let time_transform = c.transform
-                .trans(f64::from(self.game.cols * self.square_size) - 75.0, 28.0)
+                .trans(f64::from(self.game.cols * self.square_size) - 60.0, ui_font_vert)
                 .zoom(0.5);
 
             text(
                 [1.0, 0.46, 0.35, 1.0],
-                50,
+                ui_font_size,
                 &format!("{:04}", self.game.game_time()),
                 glyphs,
                 time_transform,
@@ -167,17 +176,17 @@ impl Gui {
 
                     let text_transform = board_transform
                         .trans(
-                            f64::from(curr_x) + f64::from(self.square_size) * 0.22,
-                            f64::from(curr_y) + f64::from(self.square_size) * 0.68,
+                            f64::from(curr_x) + f64::from(self.square_size) * 0.19,
+                            f64::from(curr_y) + f64::from(self.square_size) * 0.65,
                         )
                         .zoom(0.5);
 
                     let mine_transform = board_transform
                         .trans(
-                            f64::from(curr_x) + f64::from(self.square_size) * 0.1,
-                            f64::from(curr_y) + f64::from(self.square_size) * 0.1,
+                            f64::from(curr_x) + f64::from(self.square_size) * 0.06,
+                            f64::from(curr_y) + f64::from(self.square_size) * 0.06,
                         )
-                        .zoom(0.1);
+                        .zoom(0.07);
 
                     match curr_square.state {
                         SquareState::Covered => {
@@ -223,13 +232,13 @@ impl Gui {
                             );
 
                             if curr_square.is_mine {
-                                image(mine, mine_transform, g);
+                                image(&icons.mine, mine_transform, g);
                             }
 
                             if !curr_square.is_mine && curr_square.adjacent_mines > 0 {
                                 text(
                                     Gui::get_text_color(curr_square.adjacent_mines),
-                                    35,
+                                    23,
                                     &curr_square.adjacent_mines.to_string(),
                                     glyphs,
                                     text_transform,
@@ -254,12 +263,12 @@ impl Gui {
 
                             let flag_transform = board_transform
                                 .trans(
-                                    f64::from(curr_x) + f64::from(self.square_size) * 0.1,
-                                    f64::from(curr_y) + f64::from(self.square_size) * 0.1,
+                                    f64::from(curr_x) + f64::from(self.square_size) * 0.085,
+                                    f64::from(curr_y) + f64::from(self.square_size) * 0.085,
                                 )
-                                .zoom(0.15);
+                                .zoom(0.10);
 
-                            image(flag, flag_transform, g);
+                            image(&icons.flag, flag_transform, g);
                         }
                     }
                 }

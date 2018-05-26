@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::collections::VecDeque;
 use std::time::SystemTime;
+use std::cmp::min;
 
 use rand::ThreadRng;
 use rand::seq::sample_indices;
@@ -96,7 +97,7 @@ impl MineSweeper {
         if self.first_move {
             0
         } else if self.state == GameState::Ongoing {
-            self.elapsed = self.timer.elapsed().unwrap().as_secs();
+            self.elapsed = min(self.timer.elapsed().unwrap().as_secs(), 9999);
             self.elapsed
         } else {
             self.elapsed
