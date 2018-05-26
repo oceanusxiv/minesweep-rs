@@ -1,11 +1,11 @@
 #[cfg(test)]
 mod tests;
 
+use std::cmp::min;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::collections::VecDeque;
 use std::time::SystemTime;
-use std::cmp::min;
 
 use rand::ThreadRng;
 use rand::seq::sample_indices;

@@ -27,16 +27,28 @@ fn main() {
 
     let difficulty = matches.value_of("difficulty").unwrap_or("1");
 
-    let rows = matches.value_of("rows").unwrap_or("15").parse::<u32>().unwrap();
-    let cols = matches.value_of("cols").unwrap_or("12").parse::<u32>().unwrap();
-    let max_mines = matches.value_of("mines").unwrap_or("13").parse::<u32>().unwrap();
+    let rows = matches
+        .value_of("rows")
+        .unwrap_or("15")
+        .parse::<u32>()
+        .unwrap();
+    let cols = matches
+        .value_of("cols")
+        .unwrap_or("12")
+        .parse::<u32>()
+        .unwrap();
+    let max_mines = matches
+        .value_of("mines")
+        .unwrap_or("13")
+        .parse::<u32>()
+        .unwrap();
 
     let mut front = match difficulty {
-        "1" => frontend::Gui::new(8, 8,10),
-        "2" => frontend::Gui::new(16, 16,40),
-        "3" => frontend::Gui::new(24, 24,99),
-        "4" => frontend::Gui::new(cols, rows,min(max_mines, rows*cols)),
-        _ => panic!("invalid difficulty level!")
+        "1" => frontend::Gui::new(8, 8, 10),
+        "2" => frontend::Gui::new(16, 16, 40),
+        "3" => frontend::Gui::new(24, 24, 99),
+        "4" => frontend::Gui::new(cols, rows, min(max_mines, rows * cols)),
+        _ => panic!("invalid difficulty level!"),
     };
 
     let mut window: PistonWindow = WindowSettings::new("Mine Sweeper", front.get_window_size())

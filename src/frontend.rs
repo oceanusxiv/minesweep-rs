@@ -103,12 +103,17 @@ impl Gui {
         let margin = 2.0;
         let ui_font_size: u32 = 40;
         let ui_font_vert = 22.0;
-        let ui_rect_height = f64::from(self.top_bar_height) - 2.0*margin;
+        let ui_rect_height = f64::from(self.top_bar_height) - 2.0 * margin;
         window.draw_2d(event, |c, g| {
             clear([0.5, 0.5, 0.5, 1.0], g);
 
             rectangle::Rectangle::new([0.3, 0.3, 0.3, 1.0]).draw(
-                [margin, margin, f64::from(ui_font_size)*1.15, ui_rect_height],
+                [
+                    margin,
+                    margin,
+                    f64::from(ui_font_size) * 1.15,
+                    ui_rect_height,
+                ],
                 &Default::default(),
                 c.transform,
                 g,
@@ -138,7 +143,7 @@ impl Gui {
                 GameState::Lost => image(&icons.lost_face, face_transform, g),
             }
 
-            let time_rect_width = f64::from(ui_font_size)*1.5;
+            let time_rect_width = f64::from(ui_font_size) * 1.5;
             rectangle::Rectangle::new([0.3, 0.3, 0.3, 1.0]).draw(
                 [
                     f64::from(self.game.cols * self.square_size) - time_rect_width - margin,
@@ -152,7 +157,10 @@ impl Gui {
             );
 
             let time_transform = c.transform
-                .trans(f64::from(self.game.cols * self.square_size) - 60.0, ui_font_vert)
+                .trans(
+                    f64::from(self.game.cols * self.square_size) - 60.0,
+                    ui_font_vert,
+                )
                 .zoom(0.5);
 
             text(
