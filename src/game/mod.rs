@@ -25,6 +25,14 @@ pub enum GameState {
     Lost,
 }
 
+#[derive(PartialEq, Eq, Debug)]
+pub enum Difficulty {
+    Beginner,
+    Intermediate,
+    Expert,
+    Custom,
+}
+
 // convention [row, col]
 #[derive(PartialEq, Eq, Hash, Debug, Copy, Clone)]
 pub struct Position(pub u32, pub u32);
@@ -50,6 +58,15 @@ pub struct MineSweeper {
 }
 
 impl MineSweeper {
+    pub fn new_from_preset(difficulty: Difficulty) -> MineSweeper {
+        match difficulty {
+            Difficulty::Beginner => MineSweeper::new(8, 8, 10),
+            Difficulty::Intermediate => MineSweeper::new(16, 16, 40),
+            Difficulty::Expert => MineSweeper::new(24, 24, 99),
+            Difficulty::Custom => panic!("do not use this constructor with custom"),
+        }
+    }
+
     pub fn new(cols: u32, rows: u32, num_mines: u32) -> MineSweeper {
         let mut rng = thread_rng();
 

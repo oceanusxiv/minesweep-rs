@@ -1,4 +1,4 @@
-use game::{GameState, MineSweeper, Position, SquareState};
+use game::{Difficulty, GameState, MineSweeper, Position, SquareState};
 use piston_window::rectangle::Border;
 use piston_window::*;
 
@@ -30,15 +30,23 @@ pub struct Gui {
     selected_position: Option<Position>,
     left_mouse_pressed: bool,
     right_mouse_pressed: bool,
+    custom_rows: u32,
+    custom_cols: u32,
+    custom_mines: u32,
+    difficulty: Difficulty,
 }
 
 impl Gui {
-    pub fn new(cols: u32, rows: u32, num_mines: u32) -> Gui {
+    pub fn new(cols: u32, rows: u32, num_mines: u32, difficulty: Difficulty) -> Gui {
         Gui {
             game: MineSweeper::new(cols, rows, num_mines),
             selected_position: None,
             left_mouse_pressed: false,
             right_mouse_pressed: false,
+            custom_rows: rows,
+            custom_cols: cols,
+            custom_mines: num_mines,
+            difficulty,
         }
     }
 
@@ -94,9 +102,55 @@ impl Gui {
         }
     }
 
-    pub fn handle_key_press(&mut self, key: Key) {
+    pub fn handle_key_press(&mut self, key: Key, window: &mut PistonWindow) {
         match key {
             Key::R => self.game.reset(),
+            Key::Up => {
+                match self.difficulty {
+                    Difficulty::Beginner => {
+                        self.game = MineSweeper::new_from_preset(Difficulty::Intermediate);
+                        self.difficulty = Difficulty::Intermediate;
+                    }
+                    Difficulty::Intermediate => {
+                        self.game = MineSweeper::new_from_preset(Difficulty::Expert);
+                        self.difficulty = Difficulty::Expert;
+                    }
+                    Difficulty::Expert => {
+                        self.game =
+                            MineSweeper::new(self.custom_cols, self.custom_rows, self.custom_mines);
+                        self.difficulty = Difficulty::Custom;
+                    }
+                    Difficulty::Custom => {
+                        self.game = MineSweeper::new_from_preset(Difficulty::Beginner);
+                        self.difficulty = Difficulty::Beginner;
+                    }
+                }
+
+                window.set_size(self.get_window_size());
+            }
+            Key::Down => {
+                match self.difficulty {
+                    Difficulty::Expert => {
+                        self.game = MineSweeper::new_from_preset(Difficulty::Intermediate);
+                        self.difficulty = Difficulty::Intermediate;
+                    }
+                    Difficulty::Custom => {
+                        self.game = MineSweeper::new_from_preset(Difficulty::Expert);
+                        self.difficulty = Difficulty::Expert;
+                    }
+                    Difficulty::Beginner => {
+                        self.game =
+                            MineSweeper::new(self.custom_cols, self.custom_rows, self.custom_mines);
+                        self.difficulty = Difficulty::Custom;
+                    }
+                    Difficulty::Intermediate => {
+                        self.game = MineSweeper::new_from_preset(Difficulty::Beginner);
+                        self.difficulty = Difficulty::Beginner;
+                    }
+                }
+
+                window.set_size(self.get_window_size());
+            }
             _ => (),
         }
     }
@@ -193,15 +247,17 @@ impl Gui {
                             let rect;
 
                             if curr_square.is_mine {
-                                rect = rectangle::Rectangle::new(MINE_BORDER_COLOR).border(Border {
-                                    color: MINE_REVEALED_COLOR,
-                                    radius: 1.0,
-                                });
+                                rect =
+                                    rectangle::Rectangle::new(MINE_BORDER_COLOR).border(Border {
+                                        color: MINE_REVEALED_COLOR,
+                                        radius: 1.0,
+                                    });
                             } else {
-                                rect = rectangle::Rectangle::new(CELL_BORDER_COLOR).border(Border {
-                                    color: CELL_REVEALED_COLOR,
-                                    radius: 1.0,
-                                });
+                                rect =
+                                    rectangle::Rectangle::new(CELL_BORDER_COLOR).border(Border {
+                                        color: CELL_REVEALED_COLOR,
+                                        radius: 1.0,
+                                    });
                             }
 
                             rect.draw(

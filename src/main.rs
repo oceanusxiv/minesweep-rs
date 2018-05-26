@@ -9,6 +9,7 @@ mod frontend;
 mod game;
 
 use clap::App;
+use game::Difficulty;
 use piston_window::*;
 use std::cmp::min;
 
@@ -44,10 +45,10 @@ fn main() {
         .unwrap();
 
     let mut front = match difficulty {
-        "1" => frontend::Gui::new(8, 8, 10),
-        "2" => frontend::Gui::new(16, 16, 40),
-        "3" => frontend::Gui::new(24, 24, 99),
-        "4" => frontend::Gui::new(cols, rows, min(max_mines, rows * cols)),
+        "1" => frontend::Gui::new(8, 8, 10, Difficulty::Beginner),
+        "2" => frontend::Gui::new(16, 16, 40, Difficulty::Intermediate),
+        "3" => frontend::Gui::new(24, 24, 99, Difficulty::Expert),
+        "4" => frontend::Gui::new(cols, rows, min(max_mines, rows * cols), Difficulty::Custom),
         _ => panic!("invalid difficulty level!"),
     };
 
@@ -122,7 +123,7 @@ fn main() {
 
         if let Some(button) = e.press_args() {
             match button {
-                Button::Keyboard(k) => front.handle_key_press(k),
+                Button::Keyboard(k) => front.handle_key_press(k, &mut window),
                 Button::Mouse(m) => front.handle_mouse_press(m),
                 _ => (),
             }
