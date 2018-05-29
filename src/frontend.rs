@@ -128,6 +128,27 @@ impl Gui {
     pub fn handle_key_press(&mut self, key: Key, window: &mut PistonWindow) {
         match key {
             Key::R => self.game.reset(),
+            Key::D1 => {
+                self.game = MineSweeper::new_from_preset(&Difficulty::Beginner);
+                self.difficulty = Difficulty::Beginner;
+                window.set_size(self.get_window_size());
+            }
+            Key::D2 => {
+                self.game = MineSweeper::new_from_preset(&Difficulty::Intermediate);
+                self.difficulty = Difficulty::Intermediate;
+                window.set_size(self.get_window_size());
+            }
+            Key::D3 => {
+                self.game = MineSweeper::new_from_preset(&Difficulty::Expert);
+                self.difficulty = Difficulty::Expert;
+                window.set_size(self.get_window_size());
+            }
+            Key::D4 => {
+                self.game =
+                    MineSweeper::new(self.custom_cols, self.custom_rows, self.custom_mines);
+                self.difficulty = Difficulty::Custom;
+                window.set_size(self.get_window_size());
+            }
             Key::Up => {
                 match self.difficulty {
                     Difficulty::Beginner => {

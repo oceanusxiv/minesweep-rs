@@ -7,11 +7,12 @@ Identical to Windows Minesweeper, flag all mines.
 
 Controls:
 
-* `R` - restart game
+* `R/Click Face` - restart game
 * `Left click` - reveal cell
 * `Right click` - toggle flag cell
 * `Esc` - exit game
 * `Up/Down arrow` - cycle difficulty (Beginner <-> Intermediate <-> Expert <-> Custom)
+* `1/2/3/4` - hotkeys for difficulty (Beginner/Intermediate/Expert/Custom)
 
 ## Examples
 Number of flags left displayed on left, time elapsed on right.
