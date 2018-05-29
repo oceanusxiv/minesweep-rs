@@ -24,15 +24,18 @@ const CELL_REVEALED_COLOR: types::Color = [0.7, 0.7, 0.7, 1.0];
 const MINE_REVEALED_COLOR: types::Color = [0.7, 0.0, 0.0, 1.0];
 const UI_RECT_COLOR: types::Color = [0.3, 0.3, 0.3, 1.0];
 const UI_TEXT_COLOR: types::Color = [1.0, 0.46, 0.35, 1.0];
+const FACE_ICON_SCALE: f64 = 0.14;
 
 pub struct Gui {
     game: MineSweeper,
     selected_position: Option<Position>,
+    face_selected: bool,
     left_mouse_pressed: bool,
     right_mouse_pressed: bool,
     custom_rows: u32,
     custom_cols: u32,
     custom_mines: u32,
+    face_button_rect: [f64; 4],
     difficulty: Difficulty,
 }
 
@@ -41,11 +44,13 @@ impl Gui {
         Gui {
             game: MineSweeper::new(cols, rows, num_mines),
             selected_position: None,
+            face_selected: false,
             left_mouse_pressed: false,
             right_mouse_pressed: false,
             custom_rows: rows,
             custom_cols: cols,
             custom_mines: num_mines,
+            face_button_rect: [0.0, 0.0, 0.0, 0.0],
             difficulty,
         }
     }
@@ -58,13 +63,26 @@ impl Gui {
         ]
     }
 
-    pub fn handle_mouse_position(&mut self, x: f64, mut y: f64) {
-        y -= f64::from(TOP_BAR_HEIGHT);
-
-        if x >= 0.0 && y >= 0.0 && x < f64::from(self.game.cols * SQUARE_SIZE)
-            && y < f64::from(self.game.rows * SQUARE_SIZE)
+    pub fn handle_mouse_position(&mut self, x: f64, y: f64) {
+        // face button processing
+        if x >= self.face_button_rect[0] && y >= self.face_button_rect[1]
+            && (x <= self.face_button_rect[0] + self.face_button_rect[2])
+            && (y <= self.face_button_rect[1] + self.face_button_rect[3])
         {
-            self.selected_position = Some(Position(y as u32 / SQUARE_SIZE, x as u32 / SQUARE_SIZE));
+            self.face_selected = true;
+        } else {
+            self.face_selected = false;
+        }
+
+        let y_board = y - f64::from(TOP_BAR_HEIGHT);
+
+        if x >= 0.0 && y_board >= 0.0 && x < f64::from(self.game.cols * SQUARE_SIZE)
+            && y_board < f64::from(self.game.rows * SQUARE_SIZE)
+        {
+            self.selected_position = Some(Position(
+                y_board as u32 / SQUARE_SIZE,
+                x as u32 / SQUARE_SIZE,
+            ));
         } else {
             self.selected_position = None;
         }
@@ -91,6 +109,11 @@ impl Gui {
             }
         }
 
+        // face button processing
+        if self.face_selected {
+            self.game.reset();
+        }
+
         self.game.update_game_state();
     }
 
@@ -108,11 +131,11 @@ impl Gui {
             Key::Up => {
                 match self.difficulty {
                     Difficulty::Beginner => {
-                        self.game = MineSweeper::new_from_preset(Difficulty::Intermediate);
+                        self.game = MineSweeper::new_from_preset(&Difficulty::Intermediate);
                         self.difficulty = Difficulty::Intermediate;
                     }
                     Difficulty::Intermediate => {
-                        self.game = MineSweeper::new_from_preset(Difficulty::Expert);
+                        self.game = MineSweeper::new_from_preset(&Difficulty::Expert);
                         self.difficulty = Difficulty::Expert;
                     }
                     Difficulty::Expert => {
@@ -121,7 +144,7 @@ impl Gui {
                         self.difficulty = Difficulty::Custom;
                     }
                     Difficulty::Custom => {
-                        self.game = MineSweeper::new_from_preset(Difficulty::Beginner);
+                        self.game = MineSweeper::new_from_preset(&Difficulty::Beginner);
                         self.difficulty = Difficulty::Beginner;
                     }
                 }
@@ -131,11 +154,11 @@ impl Gui {
             Key::Down => {
                 match self.difficulty {
                     Difficulty::Expert => {
-                        self.game = MineSweeper::new_from_preset(Difficulty::Intermediate);
+                        self.game = MineSweeper::new_from_preset(&Difficulty::Intermediate);
                         self.difficulty = Difficulty::Intermediate;
                     }
                     Difficulty::Custom => {
-                        self.game = MineSweeper::new_from_preset(Difficulty::Expert);
+                        self.game = MineSweeper::new_from_preset(&Difficulty::Expert);
                         self.difficulty = Difficulty::Expert;
                     }
                     Difficulty::Beginner => {
@@ -144,7 +167,7 @@ impl Gui {
                         self.difficulty = Difficulty::Custom;
                     }
                     Difficulty::Intermediate => {
-                        self.game = MineSweeper::new_from_preset(Difficulty::Beginner);
+                        self.game = MineSweeper::new_from_preset(&Difficulty::Beginner);
                         self.difficulty = Difficulty::Beginner;
                     }
                 }
@@ -170,6 +193,33 @@ impl Gui {
         }
 
         color
+    }
+
+    fn draw_face_button(
+        &mut self,
+        c: &Context,
+        g: &mut G2d,
+        x: f64,
+        y: f64,
+        icon_width: f64,
+        icon_height: f64,
+    ) {
+        let color = if self.left_mouse_pressed && self.face_selected {
+            CELL_REVEALED_COLOR
+        } else {
+            CELL_COVERED_COLOR
+        };
+
+        self.face_button_rect = [
+            x - MARGIN,
+            y - MARGIN,
+            icon_width + MARGIN * 2.0,
+            icon_height + MARGIN * 2.0,
+        ];
+
+        rectangle::Rectangle::new_border(CELL_BORDER_COLOR, 1.0)
+            .color(color)
+            .draw(self.face_button_rect, &Default::default(), c.transform, g);
     }
 
     pub fn draw(
@@ -210,6 +260,16 @@ impl Gui {
             // hard coded 2 pixel offset
             let board_transform = c.transform.trans(2.0, 2.0 + f64::from(TOP_BAR_HEIGHT));
 
+            let face_width = f64::from(icons.ongoing_face.get_width()) * FACE_ICON_SCALE;
+            let face_height = f64::from(icons.ongoing_face.get_height()) * FACE_ICON_SCALE;
+            let face_x = f64::from(self.game.cols * SQUARE_SIZE) * 0.5 - face_width * 0.5;
+            let face_y = f64::from(TOP_BAR_HEIGHT) * 0.5 - face_height * 0.5;
+
+            let face_transform = c.transform.trans(face_x, face_y).zoom(FACE_ICON_SCALE);
+
+            // draw face button
+            self.draw_face_button(&c, g, face_x, face_y, face_width, face_height);
+
             // render all triangles first in batch
             for i in 0..self.game.rows {
                 for j in 0..self.game.cols {
@@ -220,15 +280,14 @@ impl Gui {
 
                     match curr_square.state {
                         SquareState::Covered => {
-                            let color;
-
-                            if self.left_mouse_pressed && self.selected_position.is_some()
+                            let color = if self.left_mouse_pressed
+                                && self.selected_position.is_some()
                                 && Position(i, j) == self.selected_position.unwrap()
                             {
-                                color = CELL_REVEALED_COLOR;
+                                CELL_REVEALED_COLOR
                             } else {
-                                color = CELL_COVERED_COLOR;
-                            }
+                                CELL_COVERED_COLOR
+                            };
 
                             rectangle::Rectangle::new_border(CELL_BORDER_COLOR, 1.0)
                                 .color(color)
@@ -245,21 +304,17 @@ impl Gui {
                                 );
                         }
                         SquareState::Revealed => {
-                            let rect;
-
-                            if curr_square.is_mine {
-                                rect =
-                                    rectangle::Rectangle::new(MINE_BORDER_COLOR).border(Border {
-                                        color: MINE_REVEALED_COLOR,
-                                        radius: 1.0,
-                                    });
+                            let rect = if curr_square.is_mine {
+                                rectangle::Rectangle::new(MINE_BORDER_COLOR).border(Border {
+                                    color: MINE_REVEALED_COLOR,
+                                    radius: 1.0,
+                                })
                             } else {
-                                rect =
-                                    rectangle::Rectangle::new(CELL_BORDER_COLOR).border(Border {
-                                        color: CELL_REVEALED_COLOR,
-                                        radius: 1.0,
-                                    });
-                            }
+                                rectangle::Rectangle::new(CELL_BORDER_COLOR).border(Border {
+                                    color: CELL_REVEALED_COLOR,
+                                    radius: 1.0,
+                                })
+                            };
 
                             rect.draw(
                                 [
@@ -356,10 +411,6 @@ impl Gui {
                 flag_num_transform,
                 g,
             ).unwrap();
-
-            let face_transform = c.transform
-                .trans(f64::from(self.game.cols * SQUARE_SIZE) * 0.5 - 12.8, 5.0)
-                .zoom(0.14);
 
             match self.game.state {
                 GameState::Ongoing => image(&icons.ongoing_face, face_transform, g),

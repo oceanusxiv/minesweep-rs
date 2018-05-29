@@ -58,8 +58,8 @@ pub struct MineSweeper {
 }
 
 impl MineSweeper {
-    pub fn new_from_preset(difficulty: Difficulty) -> MineSweeper {
-        match difficulty {
+    pub fn new_from_preset(difficulty: &Difficulty) -> MineSweeper {
+        match *difficulty {
             Difficulty::Beginner => MineSweeper::new(8, 8, 10),
             Difficulty::Intermediate => MineSweeper::new(16, 16, 40),
             Difficulty::Expert => MineSweeper::new(24, 24, 99),
