@@ -103,7 +103,6 @@ impl Gui {
                 MouseButton::Right => {
                     self.game
                         .toggle_flag_square(&self.selected_position.unwrap());
-                    self.game.first_moved();
                 }
                 _ => (),
             }
@@ -144,8 +143,7 @@ impl Gui {
                 window.set_size(self.get_window_size());
             }
             Key::D4 => {
-                self.game =
-                    MineSweeper::new(self.custom_cols, self.custom_rows, self.custom_mines);
+                self.game = MineSweeper::new(self.custom_cols, self.custom_rows, self.custom_mines);
                 self.difficulty = Difficulty::Custom;
                 window.set_size(self.get_window_size());
             }

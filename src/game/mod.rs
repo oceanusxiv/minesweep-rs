@@ -54,6 +54,7 @@ pub struct MineSweeper {
     first_move: bool,
     timer: SystemTime,
     elapsed: u64,
+    start_index: u32,
     pub state: GameState,
 }
 
@@ -70,17 +71,27 @@ impl MineSweeper {
     pub fn new(cols: u32, rows: u32, num_mines: u32) -> MineSweeper {
         let mut rng = thread_rng();
 
+        if rows * cols <= (num_mines - 1) {
+            panic!("too many mines!");
+        }
+        // samples one more position than max_mine
+        let mut mines_index =
+            sample_indices(&mut rng, (rows * cols) as usize, num_mines as usize + 1);
+        // then remove one to serve as start position, this guarantees start position will never have mines already
+        let start_index = mines_index.pop().unwrap() as u32;
+
         let mut game = MineSweeper {
             cols,
             rows,
             num_mines,
             num_flagged: 0,
-            mines_index: sample_indices(&mut rng, (rows * cols) as usize, num_mines as usize),
+            mines_index,
             rng,
             map: HashMap::new(),
             first_move: true,
             timer: SystemTime::now(),
             elapsed: 0,
+            start_index,
             state: GameState::Ongoing,
         };
 
@@ -94,8 +105,9 @@ impl MineSweeper {
         self.mines_index = sample_indices(
             &mut self.rng,
             (self.rows * self.cols) as usize,
-            self.num_mines as usize,
+            self.num_mines as usize + 1,
         );
+        self.start_index = self.mines_index.pop().unwrap() as u32;
         self.map.clear();
         self.populate_board();
         self.state = GameState::Ongoing;
@@ -280,6 +292,18 @@ impl MineSweeper {
         assert!(curr_pos.1 < self.cols);
 
         if self.map[curr_pos].state == SquareState::Covered {
+            // frustration remover, if first square is mine, move the mine somewhere else
+            if self.first_move && self.map[curr_pos].is_mine {
+                let index = self.mines_index
+                    .iter()
+                    .position(|x| *x == (curr_pos.0 * self.cols + curr_pos.1) as usize)
+                    .unwrap();
+                self.mines_index.remove(index);
+                self.mines_index.push(self.start_index as usize);
+                self.map.clear();
+                self.populate_board();
+            }
+
             let all_reveal = self.find_reveals(curr_pos);
 
             for pos in &all_reveal {

@@ -55,9 +55,34 @@ fn test_update_game_state() {
         mine_index as u32 % cols,
     ));
 
+    // due to first move behavior where mine is moved, need to reveal start position
+    let start_index = game.start_index;
+    game.reveal_square(&Position(
+        start_index as u32 / rows,
+        start_index as u32 % cols,
+    ));
+
     game.update_game_state();
 
     assert_eq!(game.state, GameState::Lost);
+}
+
+#[test]
+fn test_first_move() {
+    let mut game = MineSweeper::new(9, 9, 10);
+    let mine_index = game.mines_index[0];
+    let rows = game.rows;
+    let cols = game.cols;
+
+    let start_pos = Position(mine_index as u32 / rows, mine_index as u32 % cols);
+    game.reveal_square(&start_pos);
+
+    assert_eq!(game.state, GameState::Ongoing);
+
+    assert!(!game.map[&start_pos].is_mine);
+
+    let start_index = game.start_index;
+    assert!(game.map[&Position(start_index as u32 / rows, start_index as u32 % cols,)].is_mine)
 }
 
 #[test]
@@ -181,6 +206,7 @@ fn test_adjacent_mines_num() {
         first_move: true,
         timer: SystemTime::now(),
         elapsed: 0,
+        start_index: 1,
         state: GameState::Ongoing,
     };
 
@@ -190,6 +216,16 @@ fn test_adjacent_mines_num() {
     assert_eq!(game.map[&Position(0, 2)].adjacent_mines, 1);
     assert_eq!(game.map[&Position(1, 0)].adjacent_mines, 2);
     assert_eq!(game.map[&Position(1, 2)].adjacent_mines, 2);
+    assert_eq!(game.map[&Position(2, 0)].adjacent_mines, 1);
+    assert_eq!(game.map[&Position(2, 1)].adjacent_mines, 2);
+
+    // checking integrity after first move mine move
+    game.reveal_square(&Position(0, 0));
+
+    assert_eq!(game.map[&Position(0, 0)].adjacent_mines, 2);
+    assert_eq!(game.map[&Position(0, 2)].adjacent_mines, 2);
+    assert_eq!(game.map[&Position(1, 0)].adjacent_mines, 2);
+    assert_eq!(game.map[&Position(1, 2)].adjacent_mines, 3);
     assert_eq!(game.map[&Position(2, 0)].adjacent_mines, 1);
     assert_eq!(game.map[&Position(2, 1)].adjacent_mines, 2);
 }
@@ -224,6 +260,7 @@ fn test_reveal_square() {
         first_move: true,
         timer: SystemTime::now(),
         elapsed: 0,
+        start_index: 2,
         state: GameState::Ongoing,
     };
 
