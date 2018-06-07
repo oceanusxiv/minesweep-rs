@@ -101,18 +101,25 @@ impl Gui {
             _ => (),
         }
         if self.game.state == GameState::Ongoing && self.selected_position.is_some() {
+            fn try_reveal_adjacent(this: &mut Gui) {
+                // alleviate code duplication due to inability to combine if-guards
+                this
+                    .game
+                    .try_reveal_adjacent(&this.selected_position.unwrap())
+            }
+
             match button {
+                MouseButton::Left if self.right_mouse_pressed => try_reveal_adjacent(self),
                 MouseButton::Left => {
                     self.game.reveal_square(&self.selected_position.unwrap());
                     self.game.first_moved();
                 }
+                MouseButton::Right if self.left_mouse_pressed => try_reveal_adjacent(self),
                 MouseButton::Right => {
                     self.game
                         .toggle_flag_square(&self.selected_position.unwrap());
                 }
-                MouseButton::Middle => self
-                    .game
-                    .try_reveal_adjacent(&self.selected_position.unwrap()),
+                MouseButton::Middle => try_reveal_adjacent(self),
                 _ => (),
             }
         }
