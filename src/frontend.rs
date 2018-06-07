@@ -103,8 +103,7 @@ impl Gui {
         if self.game.state == GameState::Ongoing && self.selected_position.is_some() {
             fn try_reveal_adjacent(this: &mut Gui) {
                 // alleviate code duplication due to inability to combine if-guards
-                this
-                    .game
+                this.game
                     .try_reveal_adjacent(&this.selected_position.unwrap())
             }
 
