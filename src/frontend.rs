@@ -101,26 +101,8 @@ impl Gui {
             _ => (),
         }
         if self.game.state == GameState::Ongoing && self.selected_position.is_some() {
-            fn try_reveal_adjacent(this: &mut Gui) {
-                // alleviate code duplication due to inability to combine if-guards
-                this.game
-                    .try_reveal_adjacent(&this.selected_position.unwrap())
-            }
-
-            match button {
-                MouseButton::Left if self.right_mouse_pressed => try_reveal_adjacent(self),
-                MouseButton::Left => {
-                    self.game.reveal_square(&self.selected_position.unwrap());
-                    self.game.first_moved();
-                }
-                MouseButton::Right if self.left_mouse_pressed => try_reveal_adjacent(self),
-                MouseButton::Right => {
-                    self.game
-                        .toggle_flag_square(&self.selected_position.unwrap());
-                }
-                MouseButton::Middle => try_reveal_adjacent(self),
-                _ => (),
-            }
+            let curr_pos = &self.selected_position.unwrap();
+            self.handle_mouse_click_position(button, curr_pos);
         }
 
         // face button processing
@@ -129,6 +111,22 @@ impl Gui {
         }
 
         self.game.update_game_state();
+    }
+
+    fn handle_mouse_click_position(&mut self, button: MouseButton, curr_pos: &Position) {
+        match button {
+            MouseButton::Left if self.right_mouse_pressed =>
+                return self.handle_mouse_click_position(MouseButton::Middle, curr_pos),
+            MouseButton::Right if self.left_mouse_pressed =>
+                return self.handle_mouse_click_position(MouseButton::Middle, curr_pos),
+            MouseButton::Left => {
+                self.game.reveal_square(curr_pos);
+                self.game.first_moved();
+            }
+            MouseButton::Right => self.game.toggle_flag_square(curr_pos),
+            MouseButton::Middle => self.game.try_reveal_adjacent(curr_pos),
+            _ => (),
+        }
     }
 
     pub fn handle_mouse_press(&mut self, button: MouseButton) {
