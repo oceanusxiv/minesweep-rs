@@ -7,11 +7,11 @@ use std::collections::HashSet;
 use std::collections::VecDeque;
 use std::time::SystemTime;
 
-use rand::ThreadRng;
 use rand::seq::sample_indices;
 use rand::thread_rng;
+use rand::ThreadRng;
 
-#[derive(PartialEq, Eq, Hash, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum SquareState {
     Covered,
     Flagged,
@@ -37,6 +37,7 @@ pub enum Difficulty {
 #[derive(PartialEq, Eq, Hash, Debug, Copy, Clone)]
 pub struct Position(pub u32, pub u32);
 
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Square {
     pub is_mine: bool,
     pub adjacent_mines: u32,
@@ -274,7 +275,8 @@ impl MineSweeper {
                     all_reveal.insert(pos);
                 }
 
-                if !square.is_mine && square.state != SquareState::Flagged
+                if !square.is_mine
+                    && square.state != SquareState::Flagged
                     && square.adjacent_mines == 0
                 {
                     for p in MineSweeper::get_neighbor_coords(&pos, self.cols, self.rows) {
@@ -294,7 +296,8 @@ impl MineSweeper {
         if self.map[curr_pos].state == SquareState::Covered {
             // frustration remover, if first square is mine, move the mine somewhere else
             if self.first_move && self.map[curr_pos].is_mine {
-                let index = self.mines_index
+                let index = self
+                    .mines_index
                     .iter()
                     .position(|x| *x == (curr_pos.0 * self.cols + curr_pos.1) as usize)
                     .unwrap();
@@ -308,6 +311,36 @@ impl MineSweeper {
 
             for pos in &all_reveal {
                 self.map.get_mut(pos).unwrap().state = SquareState::Revealed;
+            }
+        }
+    }
+
+    pub fn try_reveal_adjacent(&mut self, curr_pos: &Position) {
+        assert!(curr_pos.0 < self.rows);
+        assert!(curr_pos.1 < self.cols);
+
+        let square = self.map[curr_pos].clone();
+        if square.state == SquareState::Revealed {
+            let neighbors = MineSweeper::get_neighbor_coords(curr_pos, self.cols, self.rows);
+            let guesses: HashSet<_> = neighbors
+                .iter()
+                .cloned()
+                .filter(|n| self.map[n].state == SquareState::Flagged)
+                .collect();
+
+            let unknown: Vec<_> = neighbors
+                .iter()
+                .filter(|n| self.map[n].state == SquareState::Covered)
+                .collect();
+
+            if square.adjacent_mines as usize == guesses.len() {
+                for pos in unknown {
+                    let all_reveal = self.find_reveals(pos);
+
+                    for pos in &all_reveal {
+                        self.map.get_mut(pos).unwrap().state = SquareState::Revealed;
+                    }
+                }
             }
         }
     }
