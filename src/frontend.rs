@@ -32,6 +32,7 @@ pub struct Gui {
     face_selected: bool,
     left_mouse_pressed: bool,
     right_mouse_pressed: bool,
+    middle_mouse_pressed: bool,
     custom_rows: u32,
     custom_cols: u32,
     custom_mines: u32,
@@ -47,6 +48,7 @@ impl Gui {
             face_selected: false,
             left_mouse_pressed: false,
             right_mouse_pressed: false,
+            middle_mouse_pressed: false,
             custom_rows: rows,
             custom_cols: cols,
             custom_mines: num_mines,
@@ -65,7 +67,8 @@ impl Gui {
 
     pub fn handle_mouse_position(&mut self, x: f64, y: f64) {
         // face button processing
-        if x >= self.face_button_rect[0] && y >= self.face_button_rect[1]
+        if x >= self.face_button_rect[0]
+            && y >= self.face_button_rect[1]
             && (x <= self.face_button_rect[0] + self.face_button_rect[2])
             && (y <= self.face_button_rect[1] + self.face_button_rect[3])
         {
@@ -76,7 +79,9 @@ impl Gui {
 
         let y_board = y - f64::from(TOP_BAR_HEIGHT);
 
-        if x >= 0.0 && y_board >= 0.0 && x < f64::from(self.game.cols * SQUARE_SIZE)
+        if x >= 0.0
+            && y_board >= 0.0
+            && x < f64::from(self.game.cols * SQUARE_SIZE)
             && y_board < f64::from(self.game.rows * SQUARE_SIZE)
         {
             self.selected_position = Some(Position(
@@ -92,20 +97,12 @@ impl Gui {
         match button {
             MouseButton::Left => self.left_mouse_pressed = false,
             MouseButton::Right => self.right_mouse_pressed = false,
+            MouseButton::Middle => self.middle_mouse_pressed = false,
             _ => (),
         }
         if self.game.state == GameState::Ongoing && self.selected_position.is_some() {
-            match button {
-                MouseButton::Left => {
-                    self.game.reveal_square(&self.selected_position.unwrap());
-                    self.game.first_moved();
-                }
-                MouseButton::Right => {
-                    self.game
-                        .toggle_flag_square(&self.selected_position.unwrap());
-                }
-                _ => (),
-            }
+            let curr_pos = &self.selected_position.unwrap();
+            self.handle_mouse_click_position(button, curr_pos);
         }
 
         // face button processing
@@ -116,10 +113,27 @@ impl Gui {
         self.game.update_game_state();
     }
 
+    fn handle_mouse_click_position(&mut self, button: MouseButton, curr_pos: &Position) {
+        match button {
+            MouseButton::Left if self.right_mouse_pressed =>
+                return self.handle_mouse_click_position(MouseButton::Middle, curr_pos),
+            MouseButton::Right if self.left_mouse_pressed =>
+                return self.handle_mouse_click_position(MouseButton::Middle, curr_pos),
+            MouseButton::Left => {
+                self.game.reveal_square(curr_pos);
+                self.game.first_moved();
+            }
+            MouseButton::Right => self.game.toggle_flag_square(curr_pos),
+            MouseButton::Middle => self.game.try_reveal_adjacent(curr_pos),
+            _ => (),
+        }
+    }
+
     pub fn handle_mouse_press(&mut self, button: MouseButton) {
         match button {
             MouseButton::Left => self.left_mouse_pressed = true,
             MouseButton::Right => self.right_mouse_pressed = true,
+            MouseButton::Middle => self.middle_mouse_pressed = true,
             _ => (),
         }
     }
@@ -437,7 +451,8 @@ impl Gui {
                 GameState::Lost => image(&icons.lost_face, face_transform, g),
             }
 
-            let time_transform = c.transform
+            let time_transform = c
+                .transform
                 .trans(
                     f64::from(self.game.cols * SQUARE_SIZE) - 60.0,
                     UI_FONT_Y_OFFSET,

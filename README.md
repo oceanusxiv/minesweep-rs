@@ -10,6 +10,7 @@ Controls:
 * `R/Click Face` - restart game
 * `Left click` - reveal cell
 * `Right click` - toggle flag cell
+* `Middle click` or `Left click` + `Right click` - reveal adjacent cells
 * `Esc` - exit game
 * `Up/Down arrow` - cycle difficulty (Beginner <-> Intermediate <-> Expert <-> Custom)
 * `1/2/3/4` - hotkeys for difficulty (Beginner/Intermediate/Expert/Custom)
