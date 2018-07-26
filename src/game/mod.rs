@@ -350,6 +350,10 @@ impl MineSweeper {
     }
 
     pub fn get_flags_left(&self) -> u32 {
-        self.num_mines - self.num_flagged
+        if self.num_mines < self.num_flagged {
+            0
+        } else {
+            self.num_mines - self.num_flagged
+        }
     }
 }
