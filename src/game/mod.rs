@@ -246,6 +246,8 @@ impl MineSweeper {
         } else if self.map[curr_pos].state == SquareState::Flagged {
             self.map.get_mut(curr_pos).unwrap().state = SquareState::Covered;
             self.num_flagged -= 1;
+        } else if self.num_flagged >= self.num_mines {
+            return;
         } else {
             self.map.get_mut(curr_pos).unwrap().state = SquareState::Flagged;
             self.num_flagged += 1;

@@ -248,6 +248,22 @@ fn test_toggle_flag() {
 }
 
 #[test]
+fn test_toggle_flag_max() {
+    let mut game = MineSweeper::new(9, 9, 5);
+    assert_eq!(game.num_flagged, 0);
+
+    for i in 0..5 {
+        game.toggle_flag_square(&Position(i, 4));
+    }
+
+    assert_eq!(game.num_flagged, 5);
+
+    game.toggle_flag_square(&Position(0, 3));
+
+    assert_eq!(game.num_flagged, 5);
+}
+
+#[test]
 fn test_reveal_square() {
     let mut game = MineSweeper {
         cols: 3,
